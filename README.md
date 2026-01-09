@@ -34,7 +34,15 @@ docker-compose up
 # Откройте http://localhost:5000
 ```
 
-### Вариант 4: K3s кластер
+### Вариант 4: K3s + Локальный Docker Registry (⭐ РЕКОМЕНДУЕТСЯ)
+```bash
+# Полная локальная настройка одной командой!
+bash setup-local.sh
+
+# Откройте http://localhost:8080
+```
+
+### Вариант 5: K3s с внешним registry (GitHub)
 ```bash
 # Обновите image tag в k8s/deployment.yaml
 sed -i 's|IMAGE_REGISTRY|ghcr.io|g' k8s/deployment.yaml
@@ -200,8 +208,11 @@ kubectl delete namespace demo-app
 
 ## 📚 Документация
 
+- [LOCAL_SETUP.md](LOCAL_SETUP.md) - **⭐ Локальная разработка с Docker Registry!**
 - [QUICKSTART.md](QUICKSTART.md) - Быстрый старт за 5 минут
 - [README_MAIN.md](README_MAIN.md) - Подробная документация
+- [K3S_DEPLOYMENT.md](K3S_DEPLOYMENT.md) - K3s гайд
+- [CI_CD_GUIDE.md](CI_CD_GUIDE.md) - CI/CD концепции
 - [K3s docs](https://docs.k3s.io/)
 - [Kubernetes docs](https://kubernetes.io/docs/)
 
