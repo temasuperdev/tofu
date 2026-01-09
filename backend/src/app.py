@@ -153,6 +153,10 @@ def receive_message():
         
         data = request.get_json()
         
+        # Handle case when JSON is invalid and returns None
+        if data is None:
+            return jsonify({'error': 'Failed to decode JSON object'}), 400
+        
         # Validate input
         is_valid, result = validate_input(data, 'message', max_length=MAX_MESSAGE_LENGTH)
         if not is_valid:
