@@ -56,7 +56,7 @@ spec:
       containers:
         - name: app
           # Используем образ из GitHub Container Registry
-          # В CI/CD пайплайне это будет заменено на реальный образ
+          # В CI/CD пайплайне это будет заменено на реальный образ с SHA тегом
           image: ghcr.io/temasuperdev/tofu:latest
           imagePullPolicy: Always
           
