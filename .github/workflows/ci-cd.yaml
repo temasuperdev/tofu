@@ -202,7 +202,13 @@ jobs:
           echo "Port-forwarding to service..."
           kubectl port-forward -n demo-app svc/demo-app 8080:80 > /dev/null 2>&1 &
           PF_PID=$!
-          sleep 2
+          sleep 5  # Увеличиваем время ожидания до 5 секунд
+          
+          # Проверяем, что port-forward запущен
+          timeout 10 sh -c 'until nc -z localhost 8080; do sleep 1; done' || {
+            echo "❌ Port-forward failed to start"
+            exit 1
+          }
           
           for i in {1..15}; do
             echo "Health check attempt $i/15..."
@@ -249,7 +255,13 @@ jobs:
           # Форвардируем порт и тестируем API
           kubectl port-forward -n demo-app \
             svc/demo-app 8080:80 &
-          sleep 2
+          sleep 5  # Увеличиваем время ожидания до 5 секунд
+          
+          # Проверяем, что port-forward запущен
+          timeout 10 sh -c 'until nc -z localhost 8080; do sleep 1; done' || {
+            echo "❌ Port-forward failed to start"
+            exit 1
+          }
           
           echo "Testing /api/health endpoint..."
           curl -f http://localhost:8080/api/health || exit 1
