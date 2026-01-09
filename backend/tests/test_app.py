@@ -41,14 +41,37 @@ def test_ping_endpoint(client):
 
 def test_message_endpoint_success(client):
     """Test message endpoint with valid data"""
-    response = client.post('/api/message', json={'message': 'Test message'})
+    response = client.post('/api/message',
+                          json={'message': 'Test message'},
+                          content_type='application/json')
     assert response.status_code == 201
     assert response.json['success'] is True
 
 
 def test_message_endpoint_missing_data(client):
     """Test message endpoint with missing data"""
-    response = client.post('/api/message', json={})
+    response = client.post('/api/message',
+                          json={},
+                          content_type='application/json')
+    assert response.status_code == 400
+    assert 'error' in response.json
+
+
+def test_message_endpoint_invalid_json(client):
+    """Test message endpoint with invalid JSON"""
+    response = client.post('/api/message',
+                          data='invalid json',
+                          content_type='application/json')
+    assert response.status_code == 400
+    assert 'error' in response.json
+
+
+def test_message_endpoint_too_long(client):
+    """Test message endpoint with too long message"""
+    long_message = 'A' * 1001  # Exceeds default max length of 1000
+    response = client.post('/api/message',
+                          json={'message': long_message},
+                          content_type='application/json')
     assert response.status_code == 400
     assert 'error' in response.json
 
@@ -58,6 +81,8 @@ def test_metrics_endpoint(client):
     response = client.get('/metrics')
     assert response.status_code == 200
     assert b'app_info' in response.data
+    assert b'app_requests_total' in response.data
+    assert b'app_uptime_seconds' in response.data
 
 
 def test_404_error(client):

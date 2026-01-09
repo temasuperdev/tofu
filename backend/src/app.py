@@ -167,20 +167,36 @@ def receive_message():
         return jsonify({'error': 'Internal server error'}), 500
 
 
+# Global counters for metrics
+request_count = 0
+start_time = time.time()
+
+@app.before_request
+def before_request():
+    global request_count
+    request_count += 1
+
+
 @app.route('/metrics', methods=['GET'])
 def metrics():
     """Simple metrics endpoint (Prometheus format)"""
+    global request_count
+    uptime = time.time() - start_time
     return f"""# HELP app_info Application information
 # TYPE app_info gauge
 app_info{{version="{VERSION}",environment="{ENVIRONMENT}",pod="{HOSTNAME}"}} 1
 
 # HELP app_requests_total Total requests processed
 # TYPE app_requests_total counter
-app_requests_total 0
+app_requests_total {request_count}
 
 # HELP app_uptime_seconds Application uptime in seconds
 # TYPE app_uptime_seconds gauge
-app_uptime_seconds 0
+app_uptime_seconds {uptime}
+
+# HELP app_current_datetime Current datetime
+# TYPE app_current_datetime gauge
+app_current_datetime{{timestamp="{datetime.now().isoformat()}"}} 1
 """, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
