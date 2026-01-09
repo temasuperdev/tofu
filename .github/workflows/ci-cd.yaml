@@ -21,7 +21,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   IMAGE_TAG: ${{ github.sha }}
-  SHORT_SHA: ${{ github.sha }}
 
 jobs:
   # 1. Testing Job
@@ -97,6 +96,21 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      
+      - name: Verify image push
+        run: |
+          # Выводим все теги для отладки
+          echo "Pushed tags: ${{ steps.meta.outputs.tags }}"
+          
+          # Получаем список тегов и проверяем, что хотя бы один из них доступен
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            echo "Checking if image exists: $tag"
+            if docker manifest inspect "$tag" > /dev/null 2>&1; then
+              echo "✓ Image exists: $tag"
+            else
+              echo "⚠ Image not accessible via docker manifest inspect: $tag"
+            fi
+          done
 
   # 3. Security Scanning
   security-scan:
@@ -151,8 +165,39 @@ jobs:
       
       - name: Apply Kubernetes manifests
         run: |
+          # Отладочная информация
+          echo "Registry: ${{ env.REGISTRY }}"
+          echo "Image Name: ${{ env.IMAGE_NAME }}"
+          echo "All tags: ${{ steps.meta.outputs.tags }}"
+          
+          # Получаем короткий SHA тег из метаданных
+          # docker/metadata-action создает теги в формате registry/owner/repo:tag
+          # Нам нужен только короткий SHA, который обычно имеет 7 символов
+          TAGS_LIST=$(echo "${{ steps.meta.outputs.tags }}" | tr '\n' ' ')
+          echo "Tags list: $TAGS_LIST"
+          
+          # Ищем тег, который содержит короткий SHA (7 символов)
+          SHORT_SHA=""
+          for tag in $TAGS_LIST; do
+            # Извлекаем только тег (часть после последнего двоеточия)
+            tag_name=$(echo "$tag" | awk -F':' '{print $NF}')
+            # Проверяем, является ли тег коротким SHA (ровно 7 шестнадцатеричных символов)
+            if [[ $tag_name =~ ^[a-f0-9]{7}$ ]]; then
+              SHORT_SHA="$tag_name"
+              break
+            fi
+          done
+          
+          # Если короткий SHA не найден, используем fallback
+          if [ -z "$SHORT_SHA" ]; then
+            echo "Short SHA not found in tags, using full SHA"
+            SHORT_SHA=${{ github.sha }}
+          else
+            echo "Using short SHA: $SHORT_SHA"
+          fi
+          
           # Обновляем переменные в манифестах
-          sed -e "s|ghcr.io/temasuperdev/tofu:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHORT_SHA }}|g" \
+          sed -e "s|ghcr.io/temasuperdev/tofu:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$SHORT_SHA|g" \
               backend/k8s/deployment-production.yaml | kubectl apply -f -
           
           # Apply ingress if it exists
