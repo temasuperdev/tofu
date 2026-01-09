@@ -57,7 +57,7 @@ spec:
         - name: app
           # Используем образ из GitHub Container Registry
           # В CI/CD пайплайне это будет заменено на реальный IMAGE_REGISTRY/IMAGE_NAME:IMAGE_TAG
-          image: ghcr.io/temasuperdev/tofu:latest
+          image: IMAGE_REGISTRY/IMAGE_NAME:IMAGE_TAG
           imagePullPolicy: Always
           
           # Убедимся, что используем Gunicorn для запуска приложения
