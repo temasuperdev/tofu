@@ -149,16 +149,11 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
-            - name: app-code
-              mountPath: /app
       
       # Volumes
       volumes:
         - name: tmp
           emptyDir: {}
-        - name: app-code
-          configMap:
-            name: app-code
       
       # Tolerations для расписания на всех нодах
       tolerations:
