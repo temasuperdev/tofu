@@ -149,12 +149,6 @@ jobs:
         run: |
           kubectl create namespace demo-app --dry-run=client -o yaml | kubectl apply -f -
       
-      - name: Update deployment image
-        run: |
-          kubectl set image deployment/demo-app \
-            app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHORT_SHA }} \
-            -n demo-app || echo "Deployment not found, will create from manifest"
-      
       - name: Apply Kubernetes manifests
         run: |
           # Обновляем переменные в манифестах
