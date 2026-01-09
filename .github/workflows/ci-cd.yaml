@@ -28,6 +28,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Run Tests
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -93,6 +95,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     name: Security Scanning
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -105,7 +110,7 @@ jobs:
           output: 'trivy-results.sarif'
       
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-results.sarif'
 
