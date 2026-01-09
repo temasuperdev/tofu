@@ -280,11 +280,4 @@ jobs:
           echo "=== Recent Pod Logs ==="
           kubectl logs -n demo-app -l app=demo-app --tail=50 || true
       
-      - name: Slack Notification
-        if: always()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          text: 'Deployment to K3s: ${{ job.status }}'
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-        continue-on-error: true
+
