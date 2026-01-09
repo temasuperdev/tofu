@@ -151,7 +151,11 @@ def receive_message():
         if not request.is_json:
             return jsonify({'error': 'Request must be JSON'}), 400
         
-        data = request.get_json()
+        # Use force=True to handle potentially invalid JSON
+        try:
+            data = request.get_json(force=True)
+        except Exception:
+            return jsonify({'error': 'Failed to decode JSON object'}), 400
         
         # Handle case when JSON is invalid and returns None
         if data is None:
