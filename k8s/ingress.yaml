@@ -1,0 +1,96 @@
+---
+# Ingress для доступа к приложению
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-app
+  namespace: demo-app
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    # Для обновления сертификата (если используется cert-manager)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Redirect HTTP to HTTPS
+    # ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  # tls:
+  #   - hosts:
+  #       - app.example.com
+  #     secretName: demo-app-tls
+  rules:
+    - host: app.local  # Измените на ваш домен
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-app
+                port:
+                  number: 80
+---
+# Network Policy для ограничения трафика
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo-app
+  namespace: demo-app
+spec:
+  podSelector:
+    matchLabels:
+      app: demo-app
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Разрешить входящий трафик от ingress-controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 5000
+    # Разрешить трафик внутри namespace
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5000
+  egress:
+    # Разрешить выходящий трафик в интернет для DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Разрешить трафик между подами
+    - to:
+        - podSelector: {}
+---
+# Resource Quota для namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: demo-app-quota
+  namespace: demo-app
+spec:
+  hard:
+    requests.cpu: "5"
+    requests.memory: "5Gi"
+    limits.cpu: "10"
+    limits.memory: "10Gi"
+    pods: "20"
+---
+# Pod Disruption Budget для обеспечения доступности
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: demo-app-pdb
+  namespace: demo-app
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: demo-app

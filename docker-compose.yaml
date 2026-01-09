@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: demo-app
+    ports:
+      - "5000:5000"
+    environment:
+      - APP_VERSION=1.0.0
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./src:/app/src
+      - /app/__pycache__
+    command: python src/app.py
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - demo-network
+
+  # Optional: PostgreSQL for database
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: demo-db
+  #   environment:
+  #     - POSTGRES_USER=app
+  #     - POSTGRES_PASSWORD=password
+  #     - POSTGRES_DB=demo
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - demo-network
+
+networks:
+  demo-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
