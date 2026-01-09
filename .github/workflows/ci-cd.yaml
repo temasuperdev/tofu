@@ -153,15 +153,24 @@ jobs:
           sed -e "s|IMAGE_REGISTRY|${{ env.REGISTRY }}|g" \
               -e "s|IMAGE_NAME|${{ env.IMAGE_NAME }}|g" \
               -e "s|IMAGE_TAG|${{ env.SHORT_SHA }}|g" \
-              k8s/deployment.yaml | kubectl apply -f -
+              k8s/deployment-production.yaml | kubectl apply -f -
           
-          kubectl apply -f k8s/ingress.yaml -n demo-app
+          # Apply ingress if it exists
+          if [ -f k8s/ingress.yaml ]; then
+            kubectl apply -f k8s/ingress.yaml
+          fi
       
       - name: Wait for rollout
         run: |
           kubectl rollout status deployment/demo-app \
             -n demo-app \
-            --timeout=5m
+            --timeout=5m || {
+            echo "❌ Rollout failed, collecting debug info..."
+            kubectl describe deployment demo-app -n demo-app
+            kubectl describe pods -n demo-app
+            kubectl logs -n demo-app --all-containers=true --tail=100
+            exit 1
+          }
       
       - name: Get deployment info
         run: |
@@ -181,15 +190,21 @@ jobs:
         run: |
           # Получаем IP сервиса и проверяем health endpoint
           SERVICE_IP=$(kubectl get svc demo-app -n demo-app -o jsonpath='{.spec.clusterIP}')
-          for i in {1..10}; do
-            if curl -f http://$SERVICE_IP/api/health; then
-              echo "Application is healthy"
+          echo "Service IP: $SERVICE_IP"
+          
+          for i in {1..15}; do
+            echo "Health check attempt $i/15..."
+            if curl -f -s -m 5 http://$SERVICE_IP:80/api/health > /dev/null 2>&1; then
+              echo "✅ Application is healthy"
               exit 0
             fi
-            echo "Attempt $i failed, retrying..."
-            sleep 5
+            echo "⏳ Waiting for application to be ready..."
+            sleep 3
           done
-          echo "Application health check failed"
+          
+          echo "❌ Application health check failed after 15 attempts"
+          echo "Pod logs:"
+          kubectl logs -n demo-app --all-containers=true --tail=50
           exit 1
 
   # 5. Post-Deployment Checks
