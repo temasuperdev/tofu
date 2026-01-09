@@ -12,11 +12,19 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
 import time
 
+from .config import get_config
+
+# Get configuration
+config = get_config()
+
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=getattr(logging, config.LOG_LEVEL.upper()))
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Load configuration
+app.config.from_object(config)
 
 # Enable CORS
 CORS(app)
@@ -30,11 +38,11 @@ def after_request(response):
     response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
 
-# Configuration
-VERSION = os.getenv('APP_VERSION', '1.0.0')
-ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
-HOSTNAME = os.getenv('HOSTNAME', 'unknown')
-MAX_MESSAGE_LENGTH = int(os.getenv('MAX_MESSAGE_LENGTH', '1000'))
+# Configuration from config object
+VERSION = config.APP_VERSION
+ENVIRONMENT = config.ENVIRONMENT
+HOSTNAME = config.HOSTNAME
+MAX_MESSAGE_LENGTH = config.MAX_MESSAGE_LENGTH
 
 # Input validation helper
 def validate_input(data, field_name, max_length=None, pattern=None):
@@ -223,8 +231,8 @@ def internal_error(error):
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    debug = ENVIRONMENT == 'development'
+    port = config.PORT
+    debug = config.ENVIRONMENT == 'development'
     logger.info(f"Starting application on port {port}")
     logger.info(f"Version: {VERSION}, Environment: {ENVIRONMENT}")
     app.run(host='0.0.0.0', port=port, debug=debug)

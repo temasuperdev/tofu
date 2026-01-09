@@ -1,11 +1,12 @@
 import pytest
 from src.app import app
+from src.config import TestingConfig
 
 
 @pytest.fixture
 def client():
     """Create a test client"""
-    app.config['TESTING'] = True
+    app.config.from_object(TestingConfig())
     with app.test_client() as client:
         yield client
 

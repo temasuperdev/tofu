@@ -65,7 +65,8 @@ tofu/
 ├── backend/                    # Основное приложение
 │   ├── src/                   # Исходный код Python
 │   │   ├── __init__.py
-│   │   └── app.py
+│   │   ├── app.py
+│   │   └── config.py          # Конфигурация приложения
 │   ├── tests/                 # Тесты
 │   │   ├── __init__.py
 │   │   └── test_app.py
@@ -100,6 +101,8 @@ tofu/
 ├── docs/                     # Документация
 │   ├── README.md            # Главный файл документации
 │   ├── README_MAIN.md
+│   ├── API_DOCUMENTATION.md # Документация API
+│   ├── API_EXAMPLES.md      # Примеры использования API
 │   ├── CI_CD_GUIDE.md
 │   ├── CI_CD_HEALTH_CHECK_FIX.md
 │   ├── CI_CD_HEALTH_CHECK_RESOLVED.md
@@ -134,6 +137,8 @@ tofu/
 | `/api/ping` | GET | Ping/Pong |
 | `/api/message` | POST | Отправить сообщение (JSON) |
 | `/metrics` | GET | Prometheus метрики |
+
+Для более подробной информации об API смотрите [API_DOCUMENTATION.md](API_DOCUMENTATION.md).
 
 ## 🔄 CI/CD Pipeline
 
@@ -296,6 +301,8 @@ kubectl delete namespace demo-app
 
 ## 📚 Документация
 
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md) - Документация API
+- [API_EXAMPLES.md](API_EXAMPLES.md) - Примеры использования API
 - [SOLUTION_SUMMARY.md](SOLUTION_SUMMARY.md) - Решение 404 ошибки
 - [CI_CD_HEALTH_CHECK_FIX.md](CI_CD_HEALTH_CHECK_FIX.md) - **⭐ Исправление CI/CD health check!**
 - [TROUBLESHOOTING_404.md](TROUBLESHOOTING_404.md) - Гайд по отладке
