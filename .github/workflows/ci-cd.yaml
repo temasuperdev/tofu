@@ -168,25 +168,29 @@ jobs:
           # Отладочная информация
           echo "Registry: ${{ env.REGISTRY }}"
           echo "Image Name: ${{ env.IMAGE_NAME }}"
-          echo "All tags: ${{ steps.meta.outputs.tags }}"
+          echo "All tags:"
+          echo "${{ steps.meta.outputs.tags }}"
           
           # Получаем короткий SHA тег из метаданных
           # docker/metadata-action создает теги в формате registry/owner/repo:tag
           # Нам нужен только короткий SHA, который обычно имеет 7 символов
-          TAGS_LIST=$(echo "${{ steps.meta.outputs.tags }}" | tr '\n' ' ')
-          echo "Tags list: $TAGS_LIST"
           
-          # Ищем тег, который содержит короткий SHA (7 символов)
-          SHORT_SHA=""
-          for tag in $TAGS_LIST; do
+          # Преобразуем многострочный вывод в массив тегов
+          while IFS= read -r tag; do
+            # Пропускаем пустые строки
+            [ -z "$tag" ] && continue
+            
             # Извлекаем только тег (часть после последнего двоеточия)
             tag_name=$(echo "$tag" | awk -F':' '{print $NF}')
+            echo "Processing tag: $tag_name"
+            
             # Проверяем, является ли тег коротким SHA (ровно 7 шестнадцатеричных символов)
             if [[ $tag_name =~ ^[a-f0-9]{7}$ ]]; then
               SHORT_SHA="$tag_name"
+              echo "Found short SHA: $SHORT_SHA"
               break
             fi
-          done
+          done <<< "$(echo "${{ steps.meta.outputs.tags }}" | grep -v '^$')"
           
           # Если короткий SHA не найден, используем fallback
           if [ -z "$SHORT_SHA" ]; then
