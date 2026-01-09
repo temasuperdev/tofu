@@ -250,7 +250,10 @@ kubectl delete namespace demo-app
 
 ## 📚 Документация
 
-- [LOCAL_SETUP.md](LOCAL_SETUP.md) - **⭐ Локальная разработка с Docker Registry!**
+- [SOLUTION_SUMMARY.md](SOLUTION_SUMMARY.md) - Решение 404 ошибки
+- [CI_CD_HEALTH_CHECK_FIX.md](CI_CD_HEALTH_CHECK_FIX.md) - **⭐ Исправление CI/CD health check!**
+- [TROUBLESHOOTING_404.md](TROUBLESHOOTING_404.md) - Гайд по отладке
+- [LOCAL_SETUP.md](LOCAL_SETUP.md) - Локальная разработка с Docker Registry
 - [QUICKSTART.md](QUICKSTART.md) - Быстрый старт за 5 минут
 - [README_MAIN.md](README_MAIN.md) - Подробная документация
 - [K3S_DEPLOYMENT.md](K3S_DEPLOYMENT.md) - K3s гайд
