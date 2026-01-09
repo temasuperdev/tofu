@@ -1,5 +1,5 @@
 ---
-# Ingress для доступа к приложению
+# Ingress для доступа к приложению с HTTPS
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,8 +7,15 @@ metadata:
   namespace: demo-app
   annotations:
     kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Редирект HTTP -> HTTPS
+    ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - serv.temasuug.ru
+      secretName: demo-app-tls
   rules:
     - host: serv.temasuug.ru
       http:
