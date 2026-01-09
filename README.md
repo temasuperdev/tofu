@@ -1,2 +1,4 @@
 # tofu
 opentofu terrform 
+
+init
