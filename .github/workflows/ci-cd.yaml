@@ -286,5 +286,5 @@ jobs:
         with:
           status: ${{ job.status }}
           text: 'Deployment to K3s: ${{ job.status }}'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
         continue-on-error: true
