@@ -4,9 +4,13 @@ Simple Flask application for K3s deployment demo
 """
 import os
 import logging
+import re
 from datetime import datetime
 from flask import Flask, jsonify, request, render_template_string
+from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
+from functools import wraps
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,10 +18,41 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+# Enable CORS
+CORS(app)
+
+# Security headers
+@app.after_request
+def after_request(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    return response
+
 # Configuration
 VERSION = os.getenv('APP_VERSION', '1.0.0')
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 HOSTNAME = os.getenv('HOSTNAME', 'unknown')
+MAX_MESSAGE_LENGTH = int(os.getenv('MAX_MESSAGE_LENGTH', '1000'))
+
+# Input validation helper
+def validate_input(data, field_name, max_length=None, pattern=None):
+    """Validate input field"""
+    if not data or field_name not in data:
+        return False, f"{field_name} field is required"
+    
+    value = data[field_name]
+    if not isinstance(value, str):
+        return False, f"{field_name} must be a string"
+    
+    if max_length and len(value) > max_length:
+        return False, f"{field_name} exceeds maximum length of {max_length}"
+    
+    if pattern and not re.match(pattern, value):
+        return False, f"{field_name} does not match required pattern"
+    
+    return True, value
 
 # Simple HTML template for main page
 HTML_TEMPLATE = """
@@ -25,6 +60,8 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <title>K3s Demo App</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
         .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -102,22 +139,32 @@ def get_info():
 def receive_message():
     """Receive and process a message"""
     try:
-        data = request.get_json()
-        if not data or 'message' not in data:
-            return jsonify({'error': 'Message field is required'}), 400
+        # Check if request contains JSON
+        if not request.is_json:
+            return jsonify({'error': 'Request must be JSON'}), 400
         
-        message = data.get('message', '')
-        logger.info(f"Received message: {message}")
+        data = request.get_json()
+        
+        # Validate input
+        is_valid, result = validate_input(data, 'message', max_length=MAX_MESSAGE_LENGTH)
+        if not is_valid:
+            return jsonify({'error': result}), 400
+        
+        message = result
+        # Additional sanitization if needed
+        sanitized_message = message.strip()
+        
+        logger.info(f"Received message: {sanitized_message}")
         
         return jsonify({
             'success': True,
-            'message': f'Сообщение получено: {message}',
+            'message': f'Сообщение получено: {sanitized_message}',
             'processed_at': datetime.now().isoformat(),
             'pod': HOSTNAME
         }), 201
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/metrics', methods=['GET'])
