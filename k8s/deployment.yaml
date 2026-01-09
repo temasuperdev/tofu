@@ -69,8 +69,8 @@ spec:
       
       containers:
         - name: app
-          # IMAGE_TAG будет заменен в CI/CD пайплайне
-          image: IMAGE_REGISTRY/IMAGE_NAME:IMAGE_TAG
+          # Используем простой nginx для демонстрации K3s
+          image: nginx:latest
           imagePullPolicy: IfNotPresent
           
           ports:
@@ -109,9 +109,9 @@ spec:
           # Liveness probe - проверяет живо ли приложение
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
@@ -119,9 +119,9 @@ spec:
           # Readiness probe - проверяет готово ли приложение к трафику
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /
               port: http
-            initialDelaySeconds: 5
+            initialDelaySeconds: 2
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 2
@@ -129,20 +129,18 @@ spec:
           # Startup probe - дает время на инициализацию
           startupProbe:
             httpGet:
-              path: /api/health
+              path: /
               port: http
             initialDelaySeconds: 0
-            periodSeconds: 2
+            periodSeconds: 1
             timeoutSeconds: 2
-            failureThreshold: 15
+            failureThreshold: 5
           
           # Security context для контейнера
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
-            capabilities:
-              drop:
-                - ALL
+            runAsNonRoot: false
           
           # Volume mounts
           volumeMounts:
