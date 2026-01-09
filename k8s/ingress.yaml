@@ -11,10 +11,6 @@ metadata:
     ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: traefik
-  tls:
-    - hosts:
-        - serv.temasuug.ru
-      secretName: demo-app-tls
   rules:
     - host: serv.temasuug.ru
       http:
@@ -25,7 +21,7 @@ spec:
               service:
                 name: demo-app
                 port:
-                  number: 5000
+                  name: http
 ---
 # Network Policy для ограничения трафика
 apiVersion: networking.k8s.io/v1
