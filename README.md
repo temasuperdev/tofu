@@ -198,6 +198,48 @@ kubectl describe pod <pod-name> -n demo-app
 # Ошибка в логах?
 kubectl logs <pod-name> -n demo-app
 
+## 🌐 Доступ через Ingress (K3s)
+
+При развертывании в K3s, приложение автоматически доступно через **Traefik Ingress Controller**:
+
+### Локально
+```bash
+# Получить Ingress IP адрес
+kubectl get ingress -n demo-app
+
+# Или через nodePort (если нет LoadBalancer)
+kubectl get svc -n kube-system traefik -o jsonpath='{.spec.ports[0].nodePort}'
+
+# Тестирование
+curl -H "Host: serv.temasuug.ru" http://178.236.16.81/
+curl -H "Host: serv.temasuug.ru" http://localhost:32463/api/health
+```
+
+### Через доменное имя
+Чтобы использовать доменное имя `serv.temasuug.ru`:
+1. Добавьте A record в DNS зону:
+   ```
+   serv IN A 178.236.16.81
+   ```
+2. Тогда можно обращаться как:
+   ```bash
+   curl http://serv.temasuug.ru/
+   ```
+
+### HTTPS (Let's Encrypt)
+Для автоматического HTTPS с Let's Encrypt:
+1. Установите cert-manager
+2. Добавьте TLS в Ingress
+3. Смотрите `TROUBLESHOOTING_404.md` для подробностей
+
+## 🐛 Решение проблем
+
+Если получаете ошибки при развертывании в K3s:
+- Проверьте `TROUBLESHOOTING_404.md` - полный гайд решения типичных проблем
+- Убедитесь что NetworkPolicy разрешает необходимые порты
+- Проверьте логи Traefik: `kubectl logs -n kube-system -l app.kubernetes.io/name=traefik`
+- Проверьте логи приложения: `kubectl logs -n demo-app -l app=demo-app`
+
 # Проблема с доступом?
 kubectl port-forward svc/demo-app 8080:80 -n demo-app
 curl http://localhost:8080/api/health

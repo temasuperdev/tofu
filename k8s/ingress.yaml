@@ -7,8 +7,6 @@ metadata:
   namespace: demo-app
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: traefik
   rules:
@@ -21,52 +19,7 @@ spec:
               service:
                 name: demo-app
                 port:
-                  name: http
----
-# Network Policy для ограничения трафика
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: demo-app
-  namespace: demo-app
-spec:
-  podSelector:
-    matchLabels:
-      app: demo-app
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    # Разрешить входящий трафик от ingress-controller на HTTP и HTTPS
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
-        - protocol: TCP
-          port: 80
-        - protocol: TCP
-          port: 443
-    # Разрешить трафик внутри namespace
-    - from:
-        - podSelector: {}
-      ports:
-        - protocol: TCP
-          port: 80
-        - protocol: TCP
-          port: 443
-  egress:
-    # Разрешить выходящий трафик в интернет для DNS
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              name: kube-system
-      ports:
-        - protocol: UDP
-          port: 53
-    # Разрешить трафик между подами
-    - to:
-        - podSelector: {}
+                  number: 80
 ---
 # Resource Quota для namespace
 apiVersion: v1
@@ -93,3 +46,4 @@ spec:
   selector:
     matchLabels:
       app: demo-app
+
