@@ -188,14 +188,27 @@ jobs:
       
       - name: Check application health
         run: |
-          # Получаем IP сервиса и проверяем health endpoint
-          SERVICE_IP=$(kubectl get svc demo-app -n demo-app -o jsonpath='{.spec.clusterIP}')
-          echo "Service IP: $SERVICE_IP"
+          echo "Checking application health..."
+          
+          # Проверяем что pods готовы
+          echo "Waiting for pods to be ready..."
+          kubectl wait --for=condition=ready pod -l app=demo-app -n demo-app --timeout=300s || {
+            echo "❌ Pods failed to become ready"
+            kubectl describe pods -n demo-app
+            exit 1
+          }
+          
+          # Тестируем через port-forward
+          echo "Port-forwarding to service..."
+          kubectl port-forward -n demo-app svc/demo-app 8080:80 > /dev/null 2>&1 &
+          PF_PID=$!
+          sleep 2
           
           for i in {1..15}; do
             echo "Health check attempt $i/15..."
-            if curl -f -s -m 5 http://$SERVICE_IP:80/api/health > /dev/null 2>&1; then
+            if curl -f -s -m 5 http://localhost:8080/api/health > /dev/null 2>&1; then
               echo "✅ Application is healthy"
+              kill $PF_PID 2>/dev/null || true
               exit 0
             fi
             echo "⏳ Waiting for application to be ready..."
@@ -205,6 +218,7 @@ jobs:
           echo "❌ Application health check failed after 15 attempts"
           echo "Pod logs:"
           kubectl logs -n demo-app --all-containers=true --tail=50
+          kill $PF_PID 2>/dev/null || true
           exit 1
 
   # 5. Post-Deployment Checks
