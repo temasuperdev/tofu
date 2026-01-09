@@ -6,6 +6,7 @@ import os
 import logging
 from datetime import datetime
 from flask import Flask, jsonify, request, render_template_string
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -154,6 +155,9 @@ def internal_error(error):
     logger.error(f"Internal server error: {str(error)}")
     return jsonify({'error': 'Internal server error'}), 500
 
+
+# Apply ProxyFix to handle headers from reverse proxy (Traefik)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

@@ -69,8 +69,7 @@ spec:
       
       containers:
         - name: app
-          # Используем простой nginx для демонстрации K3s
-          image: nginx:latest
+          image: demo-app:latest
           imagePullPolicy: IfNotPresent
           
           ports:
@@ -79,6 +78,8 @@ spec:
               protocol: TCP
           
           # Environment variables
+          command: ['python', 'src/app.py']
+          
           env:
             - name: HOSTNAME
               valueFrom:
@@ -109,48 +110,55 @@ spec:
           # Liveness probe - проверяет живо ли приложение
           livenessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 3
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
             failureThreshold: 3
           
           # Readiness probe - проверяет готово ли приложение к трафику
           readinessProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: http
-            initialDelaySeconds: 2
+            initialDelaySeconds: 5
             periodSeconds: 5
-            timeoutSeconds: 2
-            failureThreshold: 2
+            timeoutSeconds: 3
+            failureThreshold: 3
           
           # Startup probe - дает время на инициализацию
           startupProbe:
             httpGet:
-              path: /
+              path: /api/health
               port: http
             initialDelaySeconds: 0
-            periodSeconds: 1
-            timeoutSeconds: 2
-            failureThreshold: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 10
           
           # Security context для контейнера
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
-            runAsNonRoot: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 100
           
           # Volume mounts
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: app-code
+              mountPath: /app
       
       # Volumes
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: app-code
+          configMap:
+            name: app-code
       
       # Tolerations для расписания на всех нодах
       tolerations:
