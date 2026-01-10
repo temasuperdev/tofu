@@ -45,3 +45,17 @@ class NoteDB(Base):
     content = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# Функция для преобразования между моделями
+def convert_db_note_to_note(db_note) -> Optional[Note]:
+    """Преобразование объекта NoteDB в объект Note"""
+    if db_note:
+        return Note(
+            id=db_note.id,
+            title=db_note.title,
+            content=db_note.content,
+            created_at=db_note.created_at,
+            updated_at=db_note.updated_at
+        )
+    return None

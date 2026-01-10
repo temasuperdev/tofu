@@ -1,10 +1,12 @@
 import structlog
 import logging
+import sys
 
 def configure_logging():
     """
     Настройка структурированного логирования
     """
+    # Конфигурация structlog
     structlog.configure(
         processors=[
             structlog.stdlib.filter_by_level,
@@ -15,7 +17,7 @@ def configure_logging():
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer()
+            structlog.processors.JSONRenderer(sort_keys=True)
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
@@ -27,6 +29,14 @@ def configure_logging():
     logging.basicConfig(
         format="%(message)s",
         level=logging.INFO,
+        handlers=[logging.StreamHandler(sys.stdout)]
     )
 
     return structlog.get_logger()
+
+
+def get_logger(name=None):
+    """
+    Возвращает настроенный логгер
+    """
+    return structlog.get_logger(name)

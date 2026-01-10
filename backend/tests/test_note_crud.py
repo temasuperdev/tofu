@@ -1,7 +1,8 @@
 import pytest
 from datetime import datetime
-from src.models.note_model import Note, NoteCreate, NoteUpdate
+from src.models.note_model import Note, NoteCreate, NoteUpdate, convert_db_note_to_note
 from src.services.note_service import NoteService
+from src.models.note_model import NoteDB
 from unittest.mock import patch
 
 
@@ -28,7 +29,7 @@ class TestNoteModel:
         
         assert note_create.title == "Заголовок"
         assert note_create.content == "Содержимое"
-
+    
     def test_note_update_model(self):
         """Тест модели обновления заметки"""
         note_update = NoteUpdate(
@@ -44,30 +45,47 @@ class TestNoteModel:
         assert partial_update.title == "Новый заголовок"
         assert partial_update.content is None
 
-    def test_create_note(self):
-        """Тест создания заметки"""
-        # Создаем объект NoteCreate
-        note_create = NoteCreate(
-            title="Тестовая заметка",
-            content="Содержимое тестовой заметки"
-        )
-        
-        # Создаем заметку
-        note = Note(
+    def test_convert_db_note_to_note_function(self):
+        """Тест функции преобразования между моделями"""
+        # Создаем объект NoteDB
+        db_note = NoteDB(
             id=1,
-            title=note_create.title,
-            content=note_create.content,
+            title="Тестовая заметка",
+            content="Тестовое содержимое",
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
         
-        # Проверяем, что заметка создана с правильными параметрами
-        assert note.title == "Тестовая заметка"
-        assert note.content == "Содержимое тестовой заметки"
+        # Преобразуем в Note
+        note = convert_db_note_to_note(db_note)
+        
+        # Проверяем, что преобразование выполнено корректно
         assert note.id == 1
+        assert note.title == "Тестовая заметка"
+        assert note.content == "Тестовое содержимое"
         assert note.created_at is not None
         assert note.updated_at is not None
 
+    def test_convert_db_note_to_note_with_none(self):
+        """Тест функции преобразования с None"""
+        # Преобразуем None
+        note = convert_db_note_to_note(None)
+        
+        # Проверяем, что возвращается None
+        assert note is None
+
+    def test_note_model_post_init(self):
+        """Тест метода __post_init__ модели Note"""
+        note = Note()
+        # Проверяем, что даты инициализируются
+        assert note.created_at is not None
+        assert note.updated_at is not None
+        
+        # Создаем с конкретными датами
+        custom_date = datetime(2023, 1, 1)
+        note_with_dates = Note(created_at=custom_date, updated_at=custom_date)
+        assert note_with_dates.created_at == custom_date
+        assert note_with_dates.updated_at == custom_date
 
 class TestNoteService:
     """Тесты для сервиса заметок"""
@@ -85,3 +103,5 @@ class TestNoteService:
         assert hasattr(service, 'update_note')
         assert hasattr(service, 'delete_note')
         assert hasattr(service, 'search_notes')
+        assert hasattr(service, '_commit_or_rollback')
+        assert hasattr(service, '_convert_db_note_to_note')

@@ -8,6 +8,8 @@ from ..services.message_service import MessageService
 from ..config import get_config
 from ..utils.logging_config import configure_logging
 from ..utils.cache_manager import cache_manager
+from ..utils.error_handlers import handle_exceptions
+
 
 # Глобальные счетчики для метрик
 request_count = 0
@@ -140,37 +142,33 @@ def get_info_controller():
     return response, 200
 
 
+@handle_exceptions(logger=logger)
 def receive_message_controller():
     """Контроллер для получения сообщений"""
+    # Проверяем, является ли запрос JSON
+    if not request.is_json:
+        return jsonify({'error': 'Request must be JSON'}), 400
+
+    # Используем схему валидации
+    message_schema = MessageSchema()
     try:
-        # Проверяем, является ли запрос JSON
-        if not request.is_json:
-            return jsonify({'error': 'Request must be JSON'}), 400
+        data = request.get_json(force=True)
+    except Exception:
+        return jsonify({'error': 'Failed to decode JSON object'}), 400
 
-        # Используем схему валидации
-        message_schema = MessageSchema()
-        try:
-            data = request.get_json(force=True)
-        except Exception:
-            return jsonify({'error': 'Failed to decode JSON object'}), 400
+    if data is None:
+        return jsonify({'error': 'Failed to decode JSON object'}), 400
 
-        if data is None:
-            return jsonify({'error': 'Failed to decode JSON object'}), 400
+    # Валидируем данные
+    try:
+        result = message_schema.load(data)
+    except ValidationError as err:
+        return jsonify({'error': err.messages}), 400
 
-        # Валидируем данные
-        try:
-            result = message_schema.load(data)
-        except ValidationError as err:
-            return jsonify({'error': err.messages}), 400
-
-        # Обрабатываем сообщение
-        message = result['message']
-        response = message_service.process_message(message, config.HOSTNAME)
-        return jsonify(response), 201
-
-    except Exception as e:
-        logger.error(f"Error processing message: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+    # Обрабатываем сообщение
+    message = result['message']
+    response = message_service.process_message(message, config.HOSTNAME)
+    return jsonify(response), 201
 
 
 def metrics_controller():
@@ -178,21 +176,21 @@ def metrics_controller():
     global request_count
     uptime = time.time() - start_time
     return f"""# HELP app_info Application information
-# TYPE app_info gauge
-app_info{{version="{config.APP_VERSION}",environment="{config.ENVIRONMENT}",pod="{config.HOSTNAME}"}} 1
+ # TYPE app_info gauge
+ app_info{{version="{config.APP_VERSION}",environment="{config.ENVIRONMENT}",pod="{config.HOSTNAME}"}} 1
 
-# HELP app_requests_total Total requests processed
-# TYPE app_requests_total counter
-app_requests_total {request_count}
+ # HELP app_requests_total Total requests processed
+ # TYPE app_requests_total counter
+ app_requests_total {request_count}
 
-# HELP app_uptime_seconds Application uptime in seconds
-# TYPE app_uptime_seconds gauge
-app_uptime_seconds {uptime}
+ # HELP app_uptime_seconds Application uptime in seconds
+ # TYPE app_uptime_seconds gauge
+ app_uptime_seconds {uptime}
 
-# HELP app_current_datetime Current datetime
-# TYPE app_current_datetime gauge
-app_current_datetime{{timestamp="{datetime.now().isoformat()}"}} 1
-""", 200, {'Content-Type': 'text/plain; charset=utf-8'}
+ # HELP app_current_datetime Current datetime
+ # TYPE app_current_datetime gauge
+ app_current_datetime{{timestamp="{datetime.now().isoformat()}"}} 1
+ """, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
 def ping_controller():

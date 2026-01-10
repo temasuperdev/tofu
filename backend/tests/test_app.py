@@ -1,7 +1,7 @@
 import pytest
 from src.app import app
 from src.config import TestingConfig
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture
@@ -91,3 +91,12 @@ def test_404_error(client):
     """Test 404 error handling"""
     response = client.get('/nonexistent')
     assert response.status_code == 404
+
+
+def test_cache_manager_has_method(client):
+    """Test cache manager has method"""
+    from src.utils.cache_manager import cache_manager
+    # Проверяем, что метод has() существует
+    assert hasattr(cache_manager, 'has')
+    # Проверяем, что метод возвращает False для несуществующего ключа
+    assert cache_manager.has('nonexistent_key') is False

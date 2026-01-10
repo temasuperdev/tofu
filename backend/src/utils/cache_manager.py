@@ -125,5 +125,15 @@ class CacheManager:
             self.logger.warning(f"Cache clear error: {e}")
             return None
 
+    def has(self, key: str) -> bool:
+        """
+        Проверка наличия ключа в кэше
+        """
+        try:
+            return self.cache.has(key)
+        except Exception as e:
+            self.logger.warning(f"Cache has error: {e}")
+            return False
+
 # Глобальный экземпляр для использования в приложении
 cache_manager = CacheManager()

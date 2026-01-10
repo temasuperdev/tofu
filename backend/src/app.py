@@ -12,7 +12,7 @@ from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
 from functools import wraps
 from .config import get_config
-from .controllers.api_controllers import (
+from .controllers import (
     home_controller,
     health_check_controller,
     get_info_controller,
@@ -21,9 +21,7 @@ from .controllers.api_controllers import (
     ping_controller,
     not_found_controller,
     internal_error_controller,
-    before_request_handler
-)
-from .controllers.note_controllers import (
+    before_request_handler,
     create_note_controller,
     get_note_controller,
     get_all_notes_controller,
@@ -33,6 +31,7 @@ from .controllers.note_controllers import (
 )
 from .utils.cache_manager import cache_manager
 from .utils.swagger_config import configure_swagger
+from .utils.error_handlers import handle_exceptions
 
 # Get configuration
 config = get_config()

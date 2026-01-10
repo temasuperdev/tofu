@@ -1,11 +1,10 @@
 import os
-import os
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from ..models.note_model import Note, NoteCreate, NoteUpdate, Base, NoteDB
+from ..models.note_model import Note, NoteCreate, NoteUpdate, Base, NoteDB, convert_db_note_to_note
 from ..utils.logging_config import configure_logging
 from ..config import get_config
 
@@ -75,6 +74,18 @@ class NoteService:
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         self.db = SessionLocal()
 
+    def _commit_or_rollback(self):
+        """Общая логика фиксации транзакции или отката"""
+        try:
+            self.db.commit()
+        except SQLAlchemyError:
+            self.db.rollback()
+            raise
+
+    def _convert_db_note_to_note(self, db_note) -> Optional[Note]:
+        """Преобразование объекта NoteDB в объект Note"""
+        return convert_db_note_to_note(db_note)
+
     def create_note(self, note_create: NoteCreate) -> Note:
         """
         Создание новой заметки
@@ -88,19 +99,12 @@ class NoteService:
             )
             
             self.db.add(db_note)
-            self.db.commit()
+            self._commit_or_rollback()
             self.db.refresh(db_note)
             
             # Возвращаем объект Note вместо NoteDB
-            return Note(
-                id=db_note.id,
-                title=db_note.title,
-                content=db_note.content,
-                created_at=db_note.created_at,
-                updated_at=db_note.updated_at
-            )
+            return self._convert_db_note_to_note(db_note)
         except SQLAlchemyError as e:
-            self.db.rollback()
             logger.error(f"Database error while creating note: {str(e)}")
             raise
         except Exception as e:
@@ -113,15 +117,7 @@ class NoteService:
         """
         try:
             db_note = self.db.query(NoteDB).filter(NoteDB.id == note_id).first()
-            if db_note:
-                return Note(
-                    id=db_note.id,
-                    title=db_note.title,
-                    content=db_note.content,
-                    created_at=db_note.created_at,
-                    updated_at=db_note.updated_at
-                )
-            return None
+            return self._convert_db_note_to_note(db_note)
         except SQLAlchemyError as e:
             logger.error(f"Database error while getting note: {str(e)}")
             raise
@@ -136,13 +132,7 @@ class NoteService:
         try:
             db_notes = self.db.query(NoteDB).offset(skip).limit(limit).all()
             return [
-                Note(
-                    id=db_note.id,
-                    title=db_note.title,
-                    content=db_note.content,
-                    created_at=db_note.created_at,
-                    updated_at=db_note.updated_at
-                )
+                self._convert_db_note_to_note(db_note)
                 for db_note in db_notes
             ]
         except SQLAlchemyError as e:
@@ -168,18 +158,11 @@ class NoteService:
                 db_note.content = note_update.content
             
             db_note.updated_at = datetime.utcnow()
-            self.db.commit()
+            self._commit_or_rollback()
             self.db.refresh(db_note)
             
-            return Note(
-                id=db_note.id,
-                title=db_note.title,
-                content=db_note.content,
-                created_at=db_note.created_at,
-                updated_at=db_note.updated_at
-            )
+            return self._convert_db_note_to_note(db_note)
         except SQLAlchemyError as e:
-            self.db.rollback()
             logger.error(f"Database error while updating note: {str(e)}")
             raise
         except Exception as e:
@@ -196,10 +179,9 @@ class NoteService:
                 return False
             
             self.db.delete(db_note)
-            self.db.commit()
+            self._commit_or_rollback()
             return True
         except SQLAlchemyError as e:
-            self.db.rollback()
             logger.error(f"Database error while deleting note: {str(e)}")
             raise
         except Exception as e:
@@ -215,13 +197,7 @@ class NoteService:
                 (NoteDB.title.contains(query)) | (NoteDB.content.contains(query))
             ).offset(skip).limit(limit).all()
             return [
-                Note(
-                    id=db_note.id,
-                    title=db_note.title,
-                    content=db_note.content,
-                    created_at=db_note.created_at,
-                    updated_at=db_note.updated_at
-                )
+                self._convert_db_note_to_note(db_note)
                 for db_note in db_notes
             ]
         except SQLAlchemyError as e:
