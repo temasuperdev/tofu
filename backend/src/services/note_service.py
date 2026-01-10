@@ -44,9 +44,34 @@ class NoteService:
         if self.database_url.startswith('sqlite'):
             self.engine = create_engine(self.database_url, connect_args={"check_same_thread": False})
         else:
-            self.engine = create_engine(self.database_url)
+            # Для PostgreSQL используем параметры подключения с повторными попытками
+            from sqlalchemy.pool import QueuePool
+            self.engine = create_engine(
+                self.database_url,
+                poolclass=QueuePool,
+                pool_size=5,
+                pool_recycle=300,
+                pool_pre_ping=True,  # Проверяет соединения перед использованием
+                echo=False  # Установите в True для отладки
+            )
         
-        Base.metadata.create_all(bind=self.engine)
+        # Повторные попытки создания таблиц на случай, если БД еще не готова
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                Base.metadata.create_all(bind=self.engine)
+                break
+            except Exception as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    logger.error(f"Не удалось создать таблицы после {max_retries} попыток: {str(e)}")
+                    raise
+                else:
+                    logger.warning(f"Попытка {retry_count} создания таблиц не удалась: {str(e)}. Повтор через 5 секунд...")
+                    import time
+                    time.sleep(5)
+        
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         self.db = SessionLocal()
 
