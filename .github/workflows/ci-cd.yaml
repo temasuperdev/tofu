@@ -208,6 +208,25 @@ jobs:
             echo "⚠️ redis.yaml not found, Redis might be defined in deployment.yaml"
           fi
       
+      - name: Deploy PostgreSQL
+        run: |
+          echo "Deploying PostgreSQL..."
+          # Развертываем PostgreSQL перед приложением
+          if [ -f backend/k8s/postgres.yaml ]; then
+            kubectl apply -f backend/k8s/postgres.yaml
+            echo "Waiting for PostgreSQL to be ready..."
+            kubectl wait --for=condition=ready pod -l app=postgres -n demo-app --timeout=5m || {
+              echo "❌ PostgreSQL pod not ready"
+              kubectl get pods -n demo-app -l app=postgres
+              kubectl describe pods -n demo-app -l app=postgres
+              exit 1
+            }
+            echo "✅ PostgreSQL is ready!"
+          else
+            echo "⚠️ postgres.yaml not found"
+            exit 1
+          fi
+      
       - name: Verify image exists
         run: |
           SHORT_SHA=${GITHUB_SHA:0:7}

@@ -111,7 +111,7 @@ spec:
       
       serviceAccountName: demo-app
       
-      # InitContainer для ожидания готовности Redis
+      # InitContainer для ожидания готовности Redis и PostgreSQL
       initContainers:
         - name: wait-for-redis
           image: busybox:1.36
@@ -136,6 +136,37 @@ spec:
                 sleep 2
               done
               echo "✅ Redis is ready! (attempt $COUNTER/$MAX_ATTEMPTS)"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+        
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c']
+          args:
+            - |
+              set -e
+              echo "Waiting for PostgreSQL to be ready at postgres.demo-app.svc.cluster.local:5432..."
+              COUNTER=0
+              MAX_ATTEMPTS=90  # Увеличиваем до 90 попыток (3 минуты)
+              while ! nc -z -w 2 postgres.demo-app.svc.cluster.local 5432 2>/dev/null; do
+                COUNTER=$((COUNTER + 1))
+                if [ $COUNTER -ge $MAX_ATTEMPTS ]; then
+                  echo "❌ PostgreSQL connection timeout after $MAX_ATTEMPTS attempts"
+                  echo "Debug: Trying DNS resolution..."
+                  nslookup postgres.demo-app.svc.cluster.local || echo "DNS lookup failed"
+                  exit 1
+                fi
+                if [ $((COUNTER % 5)) -eq 0 ]; then
+                  echo "PostgreSQL not ready, waiting... (attempt $COUNTER/$MAX_ATTEMPTS)"
+                fi
+                sleep 2
+              done
+              echo "✅ PostgreSQL is ready! (attempt $COUNTER/$MAX_ATTEMPTS)"
           resources:
             requests:
               cpu: 10m
