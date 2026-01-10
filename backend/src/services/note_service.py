@@ -112,8 +112,14 @@ class NoteService:
             self._commit_or_rollback(db_session)
             db_session.refresh(db_note)
             
+            # Проверяем, что ID был корректно назначен
+            if db_note.id is None:
+                logger.error("Note ID is None after creation and refresh - this indicates a database issue")
+                raise Exception("Failed to assign ID to new note")
+            
             # Возвращаем объект Note вместо NoteDB
             result = self._convert_db_note_to_note(db_note)
+            logger.debug(f"Created note with ID: {db_note.id}")
             return result
         except SQLAlchemyError as e:
             logger.error(f"Database error while creating note: {str(e)}")
