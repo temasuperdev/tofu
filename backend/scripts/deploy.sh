@@ -61,7 +61,7 @@ print_info "Applying Kubernetes deployment manifests..."
 sed -e "s|IMAGE_REGISTRY|$REGISTRY|g" \
     -e "s|IMAGE_NAME|$IMAGE_NAME|g" \
     -e "s|IMAGE_TAG|$IMAGE_TAG|g" \
-    k8s/deployment.yaml | kubectl apply -f - > /dev/null
+    k8s/deployment-production.yaml | kubectl apply -f - > /dev/null
 print_success "Deployment manifest applied"
 
 # Apply ingress manifest

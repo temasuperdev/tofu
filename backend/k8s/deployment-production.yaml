@@ -13,10 +13,6 @@ kind: ServiceAccount
 metadata:
   name: demo-app
   namespace: demo-app
-secrets:
-- name: regcred
-imagePullSecrets:
-- name: regcred
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -115,11 +111,16 @@ spec:
         - name: app
           # Используем образ из GitHub Container Registry
           # В CI/CD пайплайне это будет заменено на реальный образ с SHA тегом
-          image: ghcr.io/temasuperdev/tofu:latest
+          image: IMAGE_REGISTRY/IMAGE_NAME:IMAGE_TAG
           imagePullPolicy: Always
           
-          # Убедимся, что используем Gunicorn для запуска приложения
-          command: ['gunicorn', '--bind', '0.0.0.0:5000', '--workers', '4', '--worker-class', 'sync', '--timeout', '30', '--access-logfile', '-', '--error-logfile', '-', 'src.app:app']
+          workingDir: /app/backend
+          
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              pip install -r requirements.txt &&
+              gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class sync --timeout 30 --access-logfile - --error-logfile - src.app:app
           
           ports:
             - name: http
