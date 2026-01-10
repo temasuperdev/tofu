@@ -58,6 +58,10 @@ def create_note_controller():
     if 'title' not in data or 'content' not in data:
         return jsonify({'error': 'Title and content are required'}), 400
 
+    # Убедимся, что в данных нет ID, который может привести к путанице
+    if 'id' in data:
+        logger.warning(f"ID field provided in POST request, ignoring it. Creating new note.")
+    
     # Создаем объект NoteCreate
     note_create = NoteCreate(
         title=data['title'],
