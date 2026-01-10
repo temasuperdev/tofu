@@ -81,8 +81,8 @@ spec:
       
       containers:
         - name: app
-          image: IMAGE_REGISTRY/IMAGE_NAME:IMAGE_TAG
-          imagePullPolicy: Always
+          image: demo-app:latest
+          imagePullPolicy: IfNotPresent
           
           workingDir: /app
           
@@ -193,7 +193,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: http
+      targetPort: 5000
       protocol: TCP
   selector:
     app: demo-app
