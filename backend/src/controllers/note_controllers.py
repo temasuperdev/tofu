@@ -2,6 +2,8 @@ from flask import request, jsonify
 from marshmallow import ValidationError
 from datetime import datetime
 import logging
+import time
+from sqlalchemy.exc import OperationalError
 from ..services.note_service import NoteService
 from ..models.note_model import NoteCreate, NoteUpdate
 from ..utils.logging_config import configure_logging
@@ -21,7 +23,21 @@ _note_service_instance = None
 def get_note_service():
     global _note_service_instance
     if _note_service_instance is None:
-        _note_service_instance = NoteService()
+        # Повторная попытка инициализации сервиса при проблемах с подключением
+        max_retries = 5
+        retry_count = 0
+        while retry_count < max_retries:
+            try:
+                _note_service_instance = NoteService()
+                break
+            except OperationalError as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    logger.error(f"Не удалось инициализировать сервис заметок после {max_retries} попыток: {str(e)}")
+                    raise
+                else:
+                    logger.warning(f"Попытка {retry_count} инициализации сервиса не удалась: {str(e)}. Повтор через 3 секунды...")
+                    time.sleep(3)
     return _note_service_instance
 
 

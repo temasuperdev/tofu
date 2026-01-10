@@ -162,9 +162,9 @@ spec:
             httpGet:
               path: /api/health
               port: http
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 30
+            initialDelaySeconds: 30  # Увеличено время для инициализации БД
+            periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 30
           
           # Security context для контейнера

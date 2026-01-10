@@ -80,6 +80,54 @@ VERSION = config.APP_VERSION
 ENVIRONMENT = config.ENVIRONMENT
 HOSTNAME = config.HOSTNAME
 
+# Wait for database to be ready before starting the application
+def wait_for_database(max_retries=30, delay=5):
+    """Wait for database to be ready before starting the application"""
+    import psycopg2
+    from urllib.parse import urlparse
+    
+    db_url = os.environ.get('DATABASE_URL', config.SQLALCHEMY_DATABASE_URI if hasattr(config, 'SQLALCHEMY_DATABASE_URI') else None)
+    
+    if not db_url or 'postgresql' not in db_url:
+        logger.info("Using SQLite or no database - skipping database readiness check")
+        return True
+    
+    parsed_url = urlparse(db_url)
+    db_host = parsed_url.hostname
+    db_port = parsed_url.port or 5432
+    db_name = parsed_url.path[1:]  # Remove leading slash
+    db_user = parsed_url.username
+    db_password = parsed_url.password
+    
+    for attempt in range(max_retries):
+        try:
+            conn = psycopg2.connect(
+                host=db_host,
+                port=db_port,
+                database=db_name,
+                user=db_user,
+                password=db_password
+            )
+            conn.close()
+            logger.info(f"Successfully connected to database at {db_host}:{db_port}")
+            return True
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1} to connect to database failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(delay)
+            else:
+                logger.error("Failed to connect to database after all attempts")
+                raise e
+    return False
+
+# Wait for database before continuing
+try:
+    wait_for_database()
+    logger.info("Database is ready, starting application...")
+except Exception as e:
+    logger.error(f"Application startup failed due to database connection issue: {e}")
+    exit(1)
+
 # Routes
 @app.route('/', methods=['GET'])
 def home():
