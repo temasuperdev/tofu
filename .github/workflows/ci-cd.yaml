@@ -100,17 +100,24 @@ jobs:
       - name: Verify image push
         run: |
           # Выводим все теги для отладки
-          echo "Pushed tags: ${{ steps.meta.outputs.tags }}"
+          echo "Pushed tags:"
+          echo "${{ steps.meta.outputs.tags }}"
+          
+          # Сохраняем теги в файл и читаем построчно для безопасной обработки
+          echo "${{ steps.meta.outputs.tags }}" > tags_list.txt
           
           # Получаем список тегов и проверяем, что хотя бы один из них доступен
-          for tag in ${{ steps.meta.outputs.tags }}; do
+          while IFS= read -r tag; do
+            # Пропускаем пустые строки
+            [ -z "$tag" ] && continue
+            
             echo "Checking if image exists: $tag"
             if docker manifest inspect "$tag" > /dev/null 2>&1; then
               echo "✓ Image exists: $tag"
             else
               echo "⚠ Image not accessible via docker manifest inspect: $tag"
             fi
-          done
+          done < tags_list.txt
 
   # 3. Security Scanning
   security-scan:
@@ -168,14 +175,19 @@ jobs:
           # Отладочная информация
           echo "Registry: ${{ env.REGISTRY }}"
           echo "Image Name: ${{ env.IMAGE_NAME }}"
+          
+          # Выводим все теги для отладки
           echo "All tags:"
           echo "${{ steps.meta.outputs.tags }}"
+          
+          # Сохраняем теги в файл для безопасной обработки
+          echo "${{ steps.meta.outputs.tags }}" > tags_list.txt
           
           # Получаем короткий SHA тег из метаданных
           # docker/metadata-action создает теги в формате registry/owner/repo:tag
           # Нам нужен только короткий SHA, который обычно имеет 7 символов
           
-          # Преобразуем многострочный вывод в массив тегов
+          # Читаем теги из файла ищем короткий SHA
           while IFS= read -r tag; do
             # Пропускаем пустые строки
             [ -z "$tag" ] && continue
@@ -190,7 +202,7 @@ jobs:
               echo "Found short SHA: $SHORT_SHA"
               break
             fi
-          done <<< "$(echo "${{ steps.meta.outputs.tags }}" | grep -v '^$')"
+          done < tags_list.txt
           
           # Если короткий SHA не найден, используем fallback
           if [ -z "$SHORT_SHA" ]; then
