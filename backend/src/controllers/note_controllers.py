@@ -14,8 +14,15 @@ logger = configure_logging()
 # Получение конфигурации
 config = get_config()
 
-# Сервис для работы с заметками
-note_service = NoteService()
+# Сервис для работы с заметками (инициализируется при первом использовании)
+_note_service_instance = None
+
+
+def get_note_service():
+    global _note_service_instance
+    if _note_service_instance is None:
+        _note_service_instance = NoteService()
+    return _note_service_instance
 
 
 def create_note_controller():
@@ -41,7 +48,7 @@ def create_note_controller():
         )
 
         # Создаем заметку через сервис
-        note = note_service.create_note(note_create)
+        note = get_note_service().create_note(note_create)
 
         # Логируем создание заметки
         logger.info(f"Note created successfully with ID: {note.id}")
@@ -65,7 +72,7 @@ def create_note_controller():
 def get_note_controller(note_id):
     """Контроллер для получения заметки по ID"""
     try:
-        note = note_service.get_note(note_id)
+        note = get_note_service().get_note(note_id)
         
         if not note:
             return jsonify({'error': 'Note not found'}), 404
@@ -94,7 +101,7 @@ def get_all_notes_controller():
         if limit > 1000:
             limit = 1000
 
-        notes = note_service.get_all_notes(skip=skip, limit=limit)
+        notes = get_note_service().get_all_notes(skip=skip, limit=limit)
 
         return jsonify({
             'notes': [
@@ -138,7 +145,7 @@ def update_note_controller(note_id):
         )
 
         # Обновляем заметку через сервис
-        note = note_service.update_note(note_id, note_update)
+        note = get_note_service().update_note(note_id, note_update)
         
         if not note:
             return jsonify({'error': 'Note not found'}), 404
@@ -166,7 +173,7 @@ def delete_note_controller(note_id):
     """Контроллер для удаления заметки"""
     try:
         # Удаляем заметку через сервис
-        deleted = note_service.delete_note(note_id)
+        deleted = get_note_service().delete_note(note_id)
         
         if not deleted:
             return jsonify({'error': 'Note not found'}), 404
@@ -196,7 +203,7 @@ def search_notes_controller():
         if limit > 1000:
             limit = 1000
 
-        notes = note_service.search_notes(query=query, skip=skip, limit=limit)
+        notes = get_note_service().search_notes(query=query, skip=skip, limit=limit)
 
         return jsonify({
             'notes': [

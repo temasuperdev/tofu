@@ -31,19 +31,23 @@ class NoteDB(Base):
 
 
 class NoteService:
-    def __init__(self):
-        # Получаем URL базы данных из конфигурации
-        database_url = config.SQLALCHEMY_DATABASE_URI
-        if not database_url:
-            # По умолчанию используем PostgreSQL
-            db_user = os.getenv('DB_USER', 'postgres')
-            db_password = os.getenv('DB_PASSWORD', 'postgres')
-            db_host = os.getenv('DB_HOST', 'localhost')
-            db_port = os.getenv('DB_PORT', '5432')
-            db_name = os.getenv('DB_NAME', 'notes_db')
-            database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    def __init__(self, database_url=None):
+        # Получаем URL базы данных из конфигурации или параметра
+        if database_url:
+            self.database_url = database_url
+        else:
+            # Получаем URL базы данных из конфигурации
+            self.database_url = config.SQLALCHEMY_DATABASE_URI
+            if not self.database_url:
+                # По умолчанию используем PostgreSQL
+                db_user = os.getenv('DB_USER', 'postgres')
+                db_password = os.getenv('DB_PASSWORD', 'postgres')
+                db_host = os.getenv('DB_HOST', 'localhost')
+                db_port = os.getenv('DB_PORT', '5432')
+                db_name = os.getenv('DB_NAME', 'notes_db')
+                self.database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
-        self.engine = create_engine(database_url)
+        self.engine = create_engine(self.database_url)
         Base.metadata.create_all(bind=self.engine)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         self.db = SessionLocal()

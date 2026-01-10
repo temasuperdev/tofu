@@ -1,36 +1,47 @@
-"""Pytest configuration and fixtures for the application tests."""
-import sys
-import os
-
-# Add backend directory to path so imports work correctly
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
 import pytest
 from src.app import app
-from src.config import TestingConfig
+from src.services.note_service import NoteService
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from src.models.note_model import Base
 
 
-@pytest.fixture
-def client():
-    """Create a test client for the Flask application.
+@pytest.fixture(scope='session')
+def test_app():
+    """Фикстура для тестового приложения"""
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     
-    This fixture configures the app in testing mode and provides
-    a test client that can be used to make requests to the app.
-    """
-    app.config.from_object(TestingConfig())
-    
-    with app.app_context():
-        yield app.test_client()
-
-
-@pytest.fixture
-def runner():
-    """Create a CLI runner for testing CLI commands."""
-    return app.test_cli_runner()
-
-
-@pytest.fixture
-def app_context():
-    """Provide application context for tests that need it."""
     with app.app_context():
         yield app
+
+
+@pytest.fixture(scope='session')
+def test_database():
+    """Фикстура для тестовой базы данных"""
+    # Создаем временную SQLite базу для тестов
+    engine = create_engine('sqlite:///:memory:')
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    
+    yield Session()
+    
+    # Закрываем соединение
+    engine.dispose()
+
+
+@pytest.fixture
+def note_service(test_database):
+    """Фикстура для сервиса заметок с тестовой базой данных"""
+    # Создаем сервис с временной базой данных
+    service = NoteService.__new__(NoteService)  # Создаем экземпляр без вызова __init__
+    service.database_url = 'sqlite:///:memory:'  # Используем in-memory SQLite
+    service.engine = create_engine(service.database_url)
+    Base.metadata.create_all(bind=service.engine)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=service.engine)
+    service.db = SessionLocal()
+    
+    yield service
+    
+    # Закрываем сессию
+    service.db.close()

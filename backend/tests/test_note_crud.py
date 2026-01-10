@@ -1,6 +1,8 @@
 import pytest
 from datetime import datetime
 from src.models.note_model import Note, NoteCreate, NoteUpdate
+from src.services.note_service import NoteService
+from unittest.mock import patch
 
 
 class TestNoteModel:
@@ -65,3 +67,21 @@ class TestNoteModel:
         assert note.id == 1
         assert note.created_at is not None
         assert note.updated_at is not None
+
+
+class TestNoteService:
+    """Тесты для сервиса заметок"""
+    
+    def test_note_service_methods_exist(self):
+        """Тест наличия методов в сервисе заметок"""
+        # Проверяем, что у сервиса есть все необходимые методы
+        # Создаем объект без вызова __init__ чтобы избежать подключения к БД
+        service = NoteService.__new__(NoteService)
+        
+        # Проверяем наличие методов
+        assert hasattr(service, 'create_note')
+        assert hasattr(service, 'get_note')
+        assert hasattr(service, 'get_all_notes')
+        assert hasattr(service, 'update_note')
+        assert hasattr(service, 'delete_note')
+        assert hasattr(service, 'search_notes')
