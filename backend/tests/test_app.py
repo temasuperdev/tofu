@@ -1,6 +1,7 @@
 import pytest
 from src.app import app
 from src.config import TestingConfig
+from unittest.mock import patch
 
 
 @pytest.fixture

@@ -48,6 +48,7 @@ limiter = Limiter(
 limiter.init_app(app)
 
 # Initialize cache
+app.config['CACHE_TYPE'] = config.CACHE_TYPE if hasattr(config, 'CACHE_TYPE') else 'redis'
 cache_manager.init_app(app)
 
 # Initialize Swagger

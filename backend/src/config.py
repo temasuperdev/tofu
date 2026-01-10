@@ -43,6 +43,7 @@ class TestingConfig(Config):
     TESTING: bool = True
     ENVIRONMENT: str = 'testing'
     WTF_CSRF_ENABLED: bool = False # Disable CSRF for testing
+    CACHE_TYPE: str = 'simple'  # Use in-memory cache for testing
 
 
 def get_config() -> Config:
