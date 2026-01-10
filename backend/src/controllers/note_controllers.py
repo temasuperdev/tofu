@@ -124,7 +124,7 @@ def get_all_notes_controller():
             }
             for note in notes
         ],
-        'total': len(notes),
+        'total': get_note_service().get_all_notes_count(),  # Обновленный метод для получения общего количества заметок
         'skip': skip,
         'limit': limit
     }), 200

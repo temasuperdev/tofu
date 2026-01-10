@@ -48,9 +48,11 @@ class NoteService:
             self.engine = create_engine(
                 self.database_url,
                 poolclass=QueuePool,
-                pool_size=5,
-                pool_recycle=300,
+                pool_size=20,  # Увеличенный размер пула для многоподового окружения
+                pool_recycle=3600,  # Повторное использование соединений
                 pool_pre_ping=True,  # Проверяет соединения перед использованием
+                pool_timeout=20,
+                max_overflow=30,
                 echo=False  # Установите в True для отладки
             )
         
@@ -71,15 +73,22 @@ class NoteService:
                     import time
                     time.sleep(5)
         
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        self.db = SessionLocal()
+        # Создаем фабрику сессий как атрибут класса, чтобы использовать её при каждом вызове
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+    
+    def get_db_session(self):
+        """
+        Создание новой сессии базы данных для каждой операции
+        Это обеспечивает согласованность данных между подами
+        """
+        return self.SessionLocal()
 
-    def _commit_or_rollback(self):
+    def _commit_or_rollback(self, db_session):
         """Общая логика фиксации транзакции или отката"""
         try:
-            self.db.commit()
+            db_session.commit()
         except SQLAlchemyError:
-            self.db.rollback()
+            db_session.rollback()
             raise
 
     def _convert_db_note_to_note(self, db_note) -> Optional[Note]:
@@ -90,6 +99,7 @@ class NoteService:
         """
         Создание новой заметки
         """
+        db_session = self.get_db_session()
         try:
             db_note = NoteDB(
                 title=note_create.title,
@@ -98,25 +108,29 @@ class NoteService:
                 updated_at=datetime.utcnow()
             )
             
-            self.db.add(db_note)
-            self._commit_or_rollback()
-            self.db.refresh(db_note)
+            db_session.add(db_note)
+            self._commit_or_rollback(db_session)
+            db_session.refresh(db_note)
             
             # Возвращаем объект Note вместо NoteDB
-            return self._convert_db_note_to_note(db_note)
+            result = self._convert_db_note_to_note(db_note)
+            return result
         except SQLAlchemyError as e:
             logger.error(f"Database error while creating note: {str(e)}")
             raise
         except Exception as e:
             logger.error(f"Error creating note: {str(e)}")
             raise
+        finally:
+            db_session.close()
 
     def get_note(self, note_id: int) -> Optional[Note]:
         """
         Получение заметки по ID
         """
+        db_session = self.get_db_session()
         try:
-            db_note = self.db.query(NoteDB).filter(NoteDB.id == note_id).first()
+            db_note = db_session.query(NoteDB).filter(NoteDB.id == note_id).first()
             return self._convert_db_note_to_note(db_note)
         except SQLAlchemyError as e:
             logger.error(f"Database error while getting note: {str(e)}")
@@ -124,13 +138,16 @@ class NoteService:
         except Exception as e:
             logger.error(f"Error getting note: {str(e)}")
             raise
+        finally:
+            db_session.close()
 
     def get_all_notes(self, skip: int = 0, limit: int = 100) -> List[Note]:
         """
         Получение всех заметок с пагинацией
         """
+        db_session = self.get_db_session()
         try:
-            db_notes = self.db.query(NoteDB).offset(skip).limit(limit).all()
+            db_notes = db_session.query(NoteDB).order_by(NoteDB.id).offset(skip).limit(limit).all()
             return [
                 self._convert_db_note_to_note(db_note)
                 for db_note in db_notes
@@ -141,13 +158,16 @@ class NoteService:
         except Exception as e:
             logger.error(f"Error getting notes: {str(e)}")
             raise
+        finally:
+            db_session.close()
 
     def update_note(self, note_id: int, note_update: NoteUpdate) -> Optional[Note]:
         """
         Обновление заметки
         """
+        db_session = self.get_db_session()
         try:
-            db_note = self.db.query(NoteDB).filter(NoteDB.id == note_id).first()
+            db_note = db_session.query(NoteDB).filter(NoteDB.id == note_id).first()
             if not db_note:
                 return None
             
@@ -158,28 +178,32 @@ class NoteService:
                 db_note.content = note_update.content
             
             db_note.updated_at = datetime.utcnow()
-            self._commit_or_rollback()
-            self.db.refresh(db_note)
+            self._commit_or_rollback(db_session)
+            db_session.refresh(db_note)
             
-            return self._convert_db_note_to_note(db_note)
+            result = self._convert_db_note_to_note(db_note)
+            return result
         except SQLAlchemyError as e:
             logger.error(f"Database error while updating note: {str(e)}")
             raise
         except Exception as e:
             logger.error(f"Error updating note: {str(e)}")
             raise
+        finally:
+            db_session.close()
 
     def delete_note(self, note_id: int) -> bool:
         """
         Удаление заметки
         """
+        db_session = self.get_db_session()
         try:
-            db_note = self.db.query(NoteDB).filter(NoteDB.id == note_id).first()
+            db_note = db_session.query(NoteDB).filter(NoteDB.id == note_id).first()
             if not db_note:
                 return False
             
-            self.db.delete(db_note)
-            self._commit_or_rollback()
+            db_session.delete(db_note)
+            self._commit_or_rollback(db_session)
             return True
         except SQLAlchemyError as e:
             logger.error(f"Database error while deleting note: {str(e)}")
@@ -187,15 +211,35 @@ class NoteService:
         except Exception as e:
             logger.error(f"Error deleting note: {str(e)}")
             raise
+        finally:
+            db_session.close()
+
+    def get_all_notes_count(self) -> int:
+        """
+        Получение общего количества заметок
+        """
+        db_session = self.get_db_session()
+        try:
+            count = db_session.query(NoteDB).count()
+            return count
+        except SQLAlchemyError as e:
+            logger.error(f"Database error while counting notes: {str(e)}")
+            raise
+        except Exception as e:
+            logger.error(f"Error counting notes: {str(e)}")
+            raise
+        finally:
+            db_session.close()
 
     def search_notes(self, query: str, skip: int = 0, limit: int = 100) -> List[Note]:
         """
         Поиск заметок по заголовку или содержимому
         """
+        db_session = self.get_db_session()
         try:
-            db_notes = self.db.query(NoteDB).filter(
+            db_notes = db_session.query(NoteDB).filter(
                 (NoteDB.title.contains(query)) | (NoteDB.content.contains(query))
-            ).offset(skip).limit(limit).all()
+            ).order_by(NoteDB.id).offset(skip).limit(limit).all()
             return [
                 self._convert_db_note_to_note(db_note)
                 for db_note in db_notes
@@ -206,3 +250,5 @@ class NoteService:
         except Exception as e:
             logger.error(f"Error searching notes: {str(e)}")
             raise
+        finally:
+            db_session.close()
