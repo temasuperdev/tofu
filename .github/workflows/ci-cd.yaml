@@ -215,9 +215,7 @@ jobs:
           fi
           
           # Обновляем переменные в манифестах
-          sed -e "s|IMAGE_REGISTRY|${{ env.REGISTRY }}|g" \
-              -e "s|IMAGE_NAME|${{ env.IMAGE_NAME }}|g" \
-              -e "s|IMAGE_TAG|$SHORT_SHA|g" \
+          sed -e "s|ghcr.io/temasuperdev/tofu:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$SHORT_SHA|g" \
               backend/k8s/deployment-production.yaml | kubectl apply -f -
           
           # Apply ingress if it exists
