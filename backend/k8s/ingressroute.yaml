@@ -34,3 +34,6 @@ spec:
           port: 80
   tls:
     secretName: demo-app-tls
+    options:
+      name: default-tls-option
+      namespace: demo-app
