@@ -106,11 +106,11 @@ metadata:
   labels:
     app: demo-redis
 spec:
+  type: ClusterIP
   ports:
   - port: 6379
     targetPort: 6379
     protocol: TCP
     name: redis
-  clusterIP: None  # Headless service for StatefulSet
   selector:
     app: demo-redis

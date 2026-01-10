@@ -96,7 +96,7 @@ def get_info_controller():
     cached_response = cache_manager.get(cache_key)
     
     if cached_response:
-        logger.info("Retrieved info from cache", cache_key=cache_key)
+        logger.debug("Retrieved info from cache", cache_key=cache_key)
         return cached_response, 200
     
     # Если в кэше нет, формируем ответ
@@ -111,11 +111,8 @@ def get_info_controller():
     response = jsonify(response_data)
     
     # Сохраняем в кэш на 5 минут (если кэш доступен)
-    cache_result = cache_manager.set(cache_key, response, timeout=300)
-    if cache_result:
-        logger.info("Stored info in cache", cache_key=cache_key)
-    else:
-        logger.info("Could not store info in cache", cache_key=cache_key)
+    # Не логируем ошибку, так как cache_manager уже обрабатывает ошибки
+    cache_manager.set(cache_key, response, timeout=300)
     
     return response, 200
 

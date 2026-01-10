@@ -193,6 +193,21 @@ jobs:
         run: |
           kubectl create namespace demo-app --dry-run=client -o yaml | kubectl apply -f -
       
+      - name: Deploy Redis
+        run: |
+          echo "Deploying Redis..."
+          # Развертываем Redis перед приложением
+          if [ -f backend/k8s/redis.yaml ]; then
+            kubectl apply -f backend/k8s/redis.yaml
+            echo "Waiting for Redis to be ready..."
+            kubectl wait --for=condition=ready pod -l app=demo-redis -n demo-app --timeout=3m || {
+              echo "⚠️ Redis pod not ready, but continuing..."
+              kubectl get pods -n demo-app -l app=demo-redis
+            }
+          else
+            echo "⚠️ redis.yaml not found, Redis might be defined in deployment.yaml"
+          fi
+      
       - name: Apply Kubernetes manifests
         run: |
           # Используем более простой и надежный подход
