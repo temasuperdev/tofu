@@ -294,28 +294,95 @@ jobs:
           echo "=== Pods status before wait ==="
           kubectl get pods -n demo-app -l app=demo-app -o wide
           echo ""
-          echo "=== Waiting for rollout ==="
-          kubectl rollout status deployment/demo-app \
+          
+          echo "=== Node resources and capacity ==="
+          kubectl top nodes 2>/dev/null || echo "Metrics server not available"
+          kubectl describe nodes | grep -A 10 "Allocated resources" || echo "Cannot get node resource allocation"
+          echo ""
+          
+          echo "=== ReplicaSet status ==="
+          kubectl get rs -n demo-app -l app=demo-app
+          echo ""
+          
+          echo "=== Waiting for rollout (with periodic status checks) ==="
+          
+          # Запускаем rollout status в фоне и периодически проверяем статус
+          timeout 360 kubectl rollout status deployment/demo-app \
             -n demo-app \
-            --timeout=5m || {
-            echo "❌ Rollout failed, collecting debug info..."
+            --timeout=6m || {
+            
             echo ""
+            echo "❌ Rollout timeout, collecting detailed debug info..."
+            echo ""
+            
+            echo "=== Deployment status ==="
+            kubectl get deployment demo-app -n demo-app -o yaml | grep -A 20 "status:" || true
+            echo ""
+            
+            echo "=== All pods detailed status ==="
+            kubectl get pods -n demo-app -l app=demo-app -o wide
+            echo ""
+            
             echo "=== Deployment description ==="
             kubectl describe deployment demo-app -n demo-app
             echo ""
-            echo "=== Pods description ==="
-            kubectl describe pods -n demo-app -l app=demo-app
+            
+            echo "=== Pods detailed description ==="
+            for pod in $(kubectl get pods -n demo-app -l app=demo-app -o jsonpath='{.items[*].metadata.name}'); do
+              echo "--- Detailed info for pod $pod ---"
+              kubectl describe pod $pod -n demo-app
+              echo ""
+              
+              echo "--- Pod status for $pod ---"
+              kubectl get pod $pod -n demo-app -o jsonpath='{.status}' | jq '.' || kubectl get pod $pod -n demo-app -o yaml
+              echo ""
+            done
             echo ""
-            echo "=== Recent pod logs ==="
-            kubectl logs -n demo-app -l app=demo-app --all-containers=true --tail=100 || true
+            
+            echo "=== Pod events (sorted by time) ==="
+            kubectl get events -n demo-app --sort-by='.lastTimestamp' --field-selector involvedObject.kind=Pod | tail -30 || true
             echo ""
-            echo "=== Init container logs (if any) ==="
+            
+            echo "=== Pod logs (all containers) ==="
+            for pod in $(kubectl get pods -n demo-app -l app=demo-app -o jsonpath='{.items[*].metadata.name}'); do
+              echo "--- Logs for pod $pod (all containers) ---"
+              kubectl logs $pod -n demo-app --all-containers=true --tail=50 || true
+              echo ""
+            done
+            echo ""
+            
+            echo "=== Init container logs ==="
             for pod in $(kubectl get pods -n demo-app -l app=demo-app -o jsonpath='{.items[*].metadata.name}'); do
               echo "--- Init container logs for pod $pod ---"
-              kubectl logs -n demo-app $pod -c wait-for-redis --tail=50 || true
+              kubectl logs $pod -n demo-app -c wait-for-redis --tail=100 || echo "No init container logs for $pod"
+              echo ""
             done
+            echo ""
+            
+            echo "=== Resource usage ==="
+            kubectl top pods -n demo-app 2>/dev/null || echo "Metrics server not available"
+            echo ""
+            
+            echo "=== Redis status ==="
+            kubectl get pods -n demo-app -l app=demo-redis || echo "Redis pods not found"
+            kubectl get svc -n demo-app demo-redis || echo "Redis service not found"
+            echo ""
+            
+            echo "=== ReplicaSet status ==="
+            kubectl get rs -n demo-app -l app=demo-app
+            echo ""
+            
+            echo "=== Checking for resource constraints ==="
+            kubectl describe nodes | grep -A 5 "Allocated resources" || true
+            echo ""
+            
             exit 1
           }
+          
+          echo "✅ Rollout completed successfully!"
+          echo ""
+          echo "=== Final pods status ==="
+          kubectl get pods -n demo-app -l app=demo-app -o wide
       
       - name: Rollback on failure
         if: failure()
