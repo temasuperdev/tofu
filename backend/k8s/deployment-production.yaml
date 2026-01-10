@@ -88,7 +88,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 0
+      maxUnavailable: 1  # Разрешаем 1 недоступный под для обновления
   revisionHistoryLimit: 3  # Ограничиваем историю ревизий
   selector:
     matchLabels:
@@ -102,6 +102,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "5000"
         prometheus.io/path: "/metrics"
+        deployment.kubernetes.io/revision: "auto"
     spec:
       tolerations:
         - key: node-role.kubernetes.io/master

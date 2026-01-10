@@ -229,6 +229,11 @@ jobs:
           echo "Deploying with SHA: $SHORT_SHA"
           echo "Full image path: $IMAGE_FULL"
           
+          # Проверяем текущий образ
+          CURRENT_IMAGE=$(kubectl get deployment demo-app -n demo-app -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "")
+          echo "Current deployment image: $CURRENT_IMAGE"
+          echo "New deployment image: $IMAGE_FULL"
+          
           # Применяем deployment с заменой всех placeholders
           echo "Applying deployment-production.yaml with image replacement..."
           sed -e "s|IMAGE_REGISTRY|${{ env.REGISTRY }}|g" \
@@ -236,15 +241,40 @@ jobs:
               -e "s|IMAGE_TAG|$SHORT_SHA|g" \
               backend/k8s/deployment-production.yaml | kubectl apply -f -
           
-          # Проверяем что образ правильно установлен
-          echo "Verifying deployment image..."
-          CURRENT_IMAGE=$(kubectl get deployment demo-app -n demo-app -o jsonpath='{.spec.template.spec.containers[0].image}' || echo "")
-          echo "Current deployment image: $CURRENT_IMAGE"
-          if [ "$CURRENT_IMAGE" != "$IMAGE_FULL" ]; then
-            echo "⚠️ Warning: Deployment image ($CURRENT_IMAGE) doesn't match expected ($IMAGE_FULL)"
-          else
-            echo "✅ Deployment image matches expected: $IMAGE_FULL"
+          # Проверяем что образ правильно установлен после применения
+          NEW_IMAGE=$(kubectl get deployment demo-app -n demo-app -o jsonpath='{.spec.template.spec.containers[0].image}' || echo "")
+          echo "Deployment image after apply: $NEW_IMAGE"
+          
+          # Если образ не совпадает, устанавливаем его напрямую
+          if [ "$NEW_IMAGE" != "$IMAGE_FULL" ]; then
+            echo "⚠️ Deployment image ($NEW_IMAGE) doesn't match expected ($IMAGE_FULL)"
+            echo "Setting image directly via kubectl set image..."
+            kubectl set image deployment/demo-app -n demo-app app=$IMAGE_FULL || {
+              echo "❌ Failed to set image directly"
+              exit 1
+            }
           fi
+          
+          # Принудительно обновляем deployment, если образ тот же (для перезапуска подов)
+          if [ "$CURRENT_IMAGE" == "$IMAGE_FULL" ] && [ -n "$CURRENT_IMAGE" ]; then
+            echo "⚠️ Image hasn't changed ($CURRENT_IMAGE), forcing rollout restart..."
+            kubectl rollout restart deployment/demo-app -n demo-app
+            echo "Waiting for restart to initiate..."
+            sleep 5
+          fi
+          
+          # Добавляем annotation с timestamp для принудительного обновления pod template
+          TIMESTAMP=$(date +%s)
+          kubectl annotate deployment demo-app -n demo-app \
+            deployment.kubernetes.io/revision-history-limit=3 \
+            kubectl.kubernetes.io/restartedAt="$TIMESTAMP" \
+            --overwrite || true
+          
+          # Если после всех действий deployment не обновился, принудительно патчим pod template
+          echo "Forcing pod template update..."
+          kubectl patch deployment demo-app -n demo-app \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$TIMESTAMP\"}}}}}" \
+            || true
           
           echo "✅ Kubernetes manifests applied successfully"
           
@@ -258,8 +288,11 @@ jobs:
           echo "=== Current deployment status ==="
           kubectl get deployment demo-app -n demo-app
           echo ""
-          echo "=== Pods status ==="
-          kubectl get pods -n demo-app -l app=demo-app
+          echo "=== Checking deployment rollout history ==="
+          kubectl rollout history deployment/demo-app -n demo-app || true
+          echo ""
+          echo "=== Pods status before wait ==="
+          kubectl get pods -n demo-app -l app=demo-app -o wide
           echo ""
           echo "=== Waiting for rollout ==="
           kubectl rollout status deployment/demo-app \
