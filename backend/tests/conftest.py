@@ -3,7 +3,7 @@ from src.app import app
 from src.services.note_service import NoteService
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.models.note_model import Base
+from src.models import Base
 
 
 @pytest.fixture(scope='session')

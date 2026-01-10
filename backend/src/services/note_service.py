@@ -1,11 +1,11 @@
 import os
+import os
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from ..models.note_model import Note, NoteCreate, NoteUpdate
+from ..models.note_model import Note, NoteCreate, NoteUpdate, Base, NoteDB
 from ..utils.logging_config import configure_logging
 from ..config import get_config
 
@@ -15,19 +15,6 @@ logger = configure_logging()
 
 # Получение конфигурации
 config = get_config()
-
-# SQLAlchemy setup
-Base = declarative_base()
-
-
-class NoteDB(Base):
-    __tablename__ = 'notes'
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    content = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class NoteService:
