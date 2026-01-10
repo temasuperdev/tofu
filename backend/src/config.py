@@ -12,13 +12,19 @@ class Config:
     MAX_MESSAGE_LENGTH: int = int(os.environ.get('MAX_MESSAGE_LENGTH', '1000'))
     
     # Database configuration
+    DB_TYPE: str = os.environ.get('DB_TYPE', 'sqlite')
     DB_USER: str = os.environ.get('DB_USER', 'postgres')
     DB_PASSWORD: str = os.environ.get('DB_PASSWORD', 'postgres')
     DB_HOST: str = os.environ.get('DB_HOST', 'localhost')
     DB_PORT: str = os.environ.get('DB_PORT', '5432')
     DB_NAME: str = os.environ.get('DB_NAME', 'notes_db')
-    SQLALCHEMY_DATABASE_URI: Optional[str] = os.environ.get('DATABASE_URL',
-        f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    
+    if DB_TYPE == 'sqlite':
+        SQLALCHEMY_DATABASE_URI: Optional[str] = os.environ.get('DATABASE_URL', f"sqlite:///./{DB_NAME}.db")
+    else:
+        SQLALCHEMY_DATABASE_URI: Optional[str] = os.environ.get('DATABASE_URL',
+            f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     
     # Logging configuration

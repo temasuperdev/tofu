@@ -13,10 +13,17 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/notes_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=notes_db
     volumes:
       - ./src:/app/src
       - /app/__pycache__
     depends_on:
+      - db
       - redis
     command: /app/.venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class sync --timeout 30 --access-logfile - --error-logfile - src.app:app
     healthcheck:
@@ -28,7 +35,26 @@ services:
     networks:
       - demo-network
 
-  redis:
+  db:
+    image: postgres:15-alpine
+    container_name: demo-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=notes_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - demo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+ redis:
     image: redis:7-alpine
     container_name: demo-redis
     ports:
@@ -38,19 +64,6 @@ services:
     networks:
       - demo-network
     command: redis-server --appendonly yes
-
-  # Optional: PostgreSQL for database
-  # db:
-  #   image: postgres:15-alpine
-  #   container_name: demo-db
-  #   environment:
-  #     - POSTGRES_USER=app
-  #     - POSTGRES_PASSWORD=password
-  #     - POSTGRES_DB=demo
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   networks:
-  #     - demo-network
 
 networks:
   demo-network:

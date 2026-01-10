@@ -15,6 +15,10 @@ data:
   ENVIRONMENT: "production"
   PORT: "5000"
   REDIS_URL: "redis://demo-redis.demo-app.svc.cluster.local:6379/0"
+  DB_TYPE: "postgres"
+  DB_HOST: "postgres.demo-app.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "notes_db"
 ---
 # Secret для безопасного хранения секретных данных
 apiVersion: v1
@@ -26,6 +30,8 @@ type: Opaque
 data:
   # Генерируется случайный секретный ключ (например, через: python -c 'import secrets; print(secrets.token_hex(16))' | base64)
   secret-key: "YzFkMjQ2YzQ4ODIxNGQ2NjdhYTU0MmQxYjJjMzQ1Njc="
+  # DATABASE_URL для подключения к PostgreSQL: postgresql://postgres:postgres@postgres.demo-app.svc.cluster.local:5432/notes_db
+  database-url: "cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBvc3RncmVzQHBvc3RncmVzLmRlbW8tYXBwLnN2Yy5jbHVzdGVyLmxvY2FsOjU0MzIvbm90ZXNfZGI="
 ---
 # Deployment
 apiVersion: apps/v1
@@ -112,6 +118,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: secret-key
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: database-url
           
           envFrom:
             - configMapRef:
