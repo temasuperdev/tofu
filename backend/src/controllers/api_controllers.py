@@ -31,11 +31,11 @@ HTML_TEMPLATE = """
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5; }
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
         .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { color: #33; }
+        h1 { color: #333; }
         .info { background-color: #e8f4f8; padding: 15px; border-left: 4px solid #00bcd4; margin: 20px 0; }
-        code { background-color: #f0f0; padding: 2px 6px; border-radius: 3px; }
+        code { background-color: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
         .endpoint { background-color: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 4px; }
         .notes-section { background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; border-radius: 4px; }
     </style>
