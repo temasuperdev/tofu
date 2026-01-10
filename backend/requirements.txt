@@ -3,7 +3,7 @@ Werkzeug
 gunicorn
 python-dotenv
 flask-cors
-flask-limiter
+Flask-Limiter
 marshmallow
 validators
 flasgger
