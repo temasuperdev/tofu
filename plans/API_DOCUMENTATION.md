@@ -1,156 +1,179 @@
 # API Documentation
 
-This document describes the API endpoints of the K3s Demo Application.
-
-## Base URL
-
-All API endpoints are relative to the base URL where the application is deployed.
-
-## Authentication
-
-No authentication is required for any of the endpoints described below.
+This document describes the API endpoints available in the application.
 
 ## Endpoints
 
-### GET /
+### Health Check
+- `GET /api/health` - Returns application health status
 
-Returns the main HTML page with application information and API documentation.
+### Application Info
+- `GET /api/info` - Returns application information
 
-**Response:**
-- Status: 20 OK
-- Content-Type: text/html
+### Message Processing
+- `POST /api/message` - Process a message (rate limited to 10 per minute)
 
-### GET /api/health
+### Notes Management (New!)
+- `POST /api/notes` - Create a new note (rate limited to 20 per minute)
+- `GET /api/notes` - Get all notes (with pagination: skip, limit)
+- `GET /api/notes/{id}` - Get a specific note by ID
+- `PUT /api/notes/{id}` - Update a specific note (rate limited to 30 per minute)
+- `DELETE /api/notes/{id}` - Delete a specific note (rate limited to 10 per minute)
+- `GET /api/notes/search?q={query}` - Search notes by title or content (with pagination: skip, limit)
 
-Health check endpoint for K8s liveness/readiness probes.
+### Metrics
+- `GET /metrics` - Prometheus metrics endpoint
 
-**Response:**
-- Status: 200 OK
-- Content-Type: application/json
+### Ping
+- `GET /api/ping` - Simple ping endpoint
 
+## Rate Limits
+
+The application implements rate limiting on certain endpoints:
+
+- `/api/message`: 10 requests per minute
+- `/api/notes`: 20 requests per minute
+- `/api/notes/{id}` (PUT): 30 requests per minute
+- `/api/notes/{id}` (DELETE): 10 requests per minute
+
+## Notes Management Details
+
+### Create Note
+Creates a new note with the provided title and content.
+
+**Request Body:**
 ```json
 {
-  "status": "healthy",
-  "timestamp": "2023-10-01T12:34:56.789123",
-  "version": "1.0.0"
-}
-```
-
-### GET /api/info
-
-Get application information.
-
-**Response:**
-- Status: 200 OK
-- Content-Type: application/json
-
-```json
-{
-  "name": "K3s CI/CD Demo",
-  "version": "1.0.0",
-  "environment": "development",
-  "pod_name": "unknown",
-  "timestamp": "2023-10-01T12:34:56.789123"
-}
-```
-
-### POST /api/message
-
-Receive and process a message.
-
-**Request:**
-- Content-Type: application/json
-- Body:
-```json
-{
-  "message": "string (max 1000 characters)"
+  "title": "Note Title",
+  "content": "Note content goes here..."
 }
 ```
 
 **Response:**
-- Status: 201 Created
-- Content-Type: application/json
-
 ```json
 {
- "success": true,
-  "message": "Сообщение получено: [your message]",
-  "processed_at": "2023-10-01T12:34:56.789123",
-  "pod": "unknown"
+  "id": 1,
+  "title": "Note Title",
+  "content": "Note content goes here...",
+  "created_at": "2023-01-01T12:00:00Z",
+  "updated_at": "2023-01-01T12:00:00Z"
 }
 ```
 
-**Errors:**
-- Status: 400 Bad Request - if message field is missing, not a string, or exceeds max length
-- Status: 500 Internal Server Error - if an internal error occurs
+### Get All Notes
+Retrieves all notes with optional pagination.
 
-### GET /metrics
-
-Prometheus metrics endpoint.
-
-**Response:**
-- Status: 200 OK
-- Content-Type: text/plain; charset=utf-8
-
-```
-# HELP app_info Application information
-# TYPE app_info gauge
-app_info{version="1.0.0",environment="development",pod="unknown"} 1
-
-# HELP app_requests_total Total requests processed
-# TYPE app_requests_total counter
-app_requests_total 10
-
-# HELP app_uptime_seconds Application uptime in seconds
-# TYPE app_uptime_seconds gauge
-app_uptime_seconds 1234.567
-
-# HELP app_current_datetime Current datetime
-# TYPE app_current_datetime gauge
-app_current_datetime{timestamp="2023-10-01T12:34:56.789123"} 1
-```
-
-### GET /api/ping
-
-Simple ping endpoint.
+**Query Parameters:**
+- `skip` (optional, default: 0): Number of records to skip
+- `limit` (optional, default: 100, max: 100): Maximum number of records to return
 
 **Response:**
-- Status: 200 OK
-- Content-Type: application/json
-
 ```json
 {
-  "pong": true,
-  "timestamp": "2023-10-01T12:34:56.789123"
+  "notes": [
+    {
+      "id": 1,
+      "title": "Note Title",
+      "content": "Note content goes here...",
+      "created_at": "2023-01-01T12:00:00Z",
+      "updated_at": "2023-01-01T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "skip": 0,
+  "limit": 100
+}
+```
+
+### Get Note by ID
+Retrieves a specific note by its ID.
+
+**Response:**
+```json
+{
+  "id": 1,
+  "title": "Note Title",
+  "content": "Note content goes here...",
+  "created_at": "2023-01-01T12:00:00Z",
+  "updated_at": "2023-01-01T12:00:00Z"
+}
+```
+
+### Update Note
+Updates a specific note with the provided fields.
+
+**Request Body:**
+```json
+{
+  "title": "Updated Title",
+  "content": "Updated content goes here..."
+}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "title": "Updated Title",
+  "content": "Updated content goes here...",
+  "created_at": "2023-01-01T12:00:00Z",
+  "updated_at": "2023-01-01T12:00:00Z"
+}
+```
+
+### Delete Note
+Deletes a specific note by its ID.
+
+**Response:**
+```json
+{
+  "message": "Note deleted successfully"
+}
+```
+
+### Search Notes
+Searches notes by title or content.
+
+**Query Parameters:**
+- `q` (required): Search query string
+- `skip` (optional, default: 0): Number of records to skip
+- `limit` (optional, default: 100, max: 1000): Maximum number of records to return
+
+**Response:**
+```json
+{
+  "notes": [
+    {
+      "id": 1,
+      "title": "Note Title",
+      "content": "Note content goes here...",
+      "created_at": "2023-01-01T12:00:00Z",
+      "updated_at": "2023-01-01T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "skip": 0,
+  "limit": 100,
+  "query": "search term"
 }
 ```
 
 ## Error Responses
 
-When an error occurs, the API returns a JSON object with an error message:
+All endpoints may return the following error responses:
 
-```json
-{
-  "error": "Description of the error"
-}
-```
+- `400 Bad Request` - Invalid input data
+- `404 Not Found` - Resource not found
+- `429 Too Many Requests` - Rate limit exceeded
+- `500 Internal Server Error` - Unexpected server error
 
-## Configuration
+## Database
 
-The application behavior can be configured using environment variables:
+The application uses PostgreSQL for storing notes. Connection details can be configured via environment variables:
 
-- `APP_VERSION`: Version of the application (default: "1.0.0")
-- `ENVIRONMENT`: Environment name (default: "development")
-- `HOSTNAME`: Hostname identification (default: "unknown")
-- `MAX_MESSAGE_LENGTH`: Maximum length of messages (default: 1000)
-- `PORT`: Port number to listen on (default: 5000)
-- `LOG_LEVEL`: Logging level (default: "INFO")
-
-## Security Headers
-
-The application sets the following security headers on all responses:
-
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 1; mode=block`
-- `Strict-Transport-Security: max-age=63072000; includeSubDomains`
+- `DB_USER` (default: postgres)
+- `DB_PASSWORD` (default: postgres)
+- `DB_HOST` (default: localhost)
+- `DB_PORT` (default: 5432)
+- `DB_NAME` (default: notes_db)
+- `DATABASE_URL` (full connection string)
