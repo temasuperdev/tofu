@@ -10,3 +10,4 @@ flasgger
 flask-caching
 redis
 structlog
+python-json-logger

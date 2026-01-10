@@ -1,6 +1,5 @@
 import structlog
 import logging
-from pythonjsonlogger import jsonlogger
 
 def configure_logging():
     """
