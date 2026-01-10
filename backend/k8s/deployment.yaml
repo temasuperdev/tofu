@@ -120,11 +120,11 @@ spec:
           # Resource requests and limits
           resources:
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 200m
+              memory: 256Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 1000m
+              memory: 1Gi
           
           # Liveness probe - проверяет живо ли приложение
           livenessProbe:
@@ -151,10 +151,10 @@ spec:
             httpGet:
               path: /api/health
               port: http
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 5
-            timeoutSeconds: 10
-            failureThreshold: 20
+            timeoutSeconds: 30
+            failureThreshold: 30
           
           # Security context для контейнера
           securityContext:
