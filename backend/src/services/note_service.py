@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from ..models.note_model import Note, NoteCreate, NoteUpdate, Base, NoteDB, convert_db_note_to_note
@@ -97,11 +97,16 @@ class NoteService:
 
     def create_note(self, note_create: NoteCreate) -> Note:
         """
-        Создание новой заметки
+        Создание новой заметки с присвоением следующего по порядку ID
         """
         db_session = self.get_db_session()
         try:
+            # Получаем максимальный существующий ID из базы данных
+            max_id_result = db_session.query(func.coalesce(func.max(NoteDB.id), 0)).scalar()
+            next_id = max_id_result + 1
+            
             db_note = NoteDB(
+                id=next_id,  # Явно задаем следующий ID
                 title=note_create.title,
                 content=note_create.content,
                 created_at=datetime.utcnow(),
