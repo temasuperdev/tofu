@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name="demo-app",
     version="1.0.0",
-    packages=find_packages(),
+    packages=find_packages(include=['src', 'src.*']),
     include_package_data=True,
     install_requires=[
         "flask>=2.3.0",

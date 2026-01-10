@@ -33,17 +33,21 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Set environment variables
 ENV PATH=/app/.venv/bin:$PATH \
+    PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     ENVIRONMENT=production \
     PORT=5000
 
+# Copy application code (as root first for installation)
+COPY . .
+
+# Install application in editable mode to make imports work correctly
+RUN /app/.venv/bin/pip install --no-cache-dir -e .
+
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
-
-# Copy application code
-COPY --chown=appuser:appuser . .
 
 # Switch to non-root user
 USER appuser
