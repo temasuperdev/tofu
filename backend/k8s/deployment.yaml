@@ -159,12 +159,49 @@ spec:
           
           # Startup probe - дает время на инициализацию
           startupProbe:
-            httpGet:
-              path: /api/health
-              port: http
-            initialDelaySeconds: 30  # Увеличено время для инициализации БД
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                python -c "
+                import psycopg2
+                import os
+                import time
+                import logging
+                logging.basicConfig(level=logging.INFO)
+                logger = logging.getLogger(__name__)
+                
+                # Получаем параметры подключения из окружения
+                db_host = os.environ.get('DB_HOST', 'localhost')
+                db_port = os.environ.get('DB_PORT', '5432')
+                db_user = os.environ.get('DB_USER', 'postgres')
+                db_password = os.environ.get('DB_PASSWORD', 'postgres')
+                db_name = os.environ.get('DB_NAME', 'notes_db')
+                
+                max_retries = 30
+                for attempt in range(max_retries):
+                    try:
+                        conn = psycopg2.connect(
+                            host=db_host,
+                            port=db_port,
+                            database=db_name,
+                            user=db_user,
+                            password=db_password
+                        )
+                        conn.close()
+                        logger.info(f'Successfully connected to database at {db_host}:{db_port}')
+                        break
+                    except Exception as e:
+                        logger.info(f'Attempt {attempt + 1} to connect to database failed: {e}')
+                        if attempt < max_retries - 1:
+                            time.sleep(5)
+                        else:
+                            raise e
+                "
+            initialDelaySeconds: 10
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
             failureThreshold: 30
           
           # Security context для контейнера
@@ -184,6 +221,27 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+      
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        command: ['sh', '-c']
+        args:
+        - |
+          until pg_isready -h postgres.demo-app.svc.cluster.local -p 5432 -U postgres
+          do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: password
+        envFrom:
+        - secretRef:
+            name: postgres-secrets
       
       # Tolerations для расписания на всех нодах
       tolerations:
