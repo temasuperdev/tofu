@@ -322,13 +322,13 @@ jobs:
           kubectl get pods -n demo-app
           
           # Пробуем получить информацию через API
-          kubectl run test-pod --image=curlimages/curl -n demo-app --rm -it --restart=Never --overrides='{"spec":{"containers":[{"name":"test-pod","image":"curlimages/curl","resources":{"requests":{"cpu":"10m","memory":"10Mi"},"limits":{"cpu":"100m","memory":"100Mi"}}}]}}' -- curl -s http://demo-app:80/api/info
+          kubectl run test-pod --image=curlimages/curl -n demo-app --rm -it --restart=Never --overrides='{"spec":{"containers":[{"name":"test-pod","image":"curlimages/curl","resources":{"requests":{"cpu":"10m","memory":"10Mi"},"limits":{"cpu":"100m","memory":"100Mi"}}}]}}' -- curl -s http://demo-app.demo-app.svc.cluster.local:80/api/info
           
           # Проверяем health endpoint
-          kubectl run test-pod --image=curlimages/curl -n demo-app --rm -it --restart=Never --overrides='{"spec":{"containers":[{"name":"test-pod","image":"curlimages/curl","resources":{"requests":{"cpu":"10m","memory":"10Mi"},"limits":{"cpu":"100m","memory":"100Mi"}}}]}}' -- curl -s http://demo-app:80/api/health
+          kubectl run test-pod --image=curlimages/curl -n demo-app --rm -it --restart=Never --overrides='{"spec":{"containers":[{"name":"test-pod","image":"curlimages/curl","resources":{"requests":{"cpu":"10m","memory":"10Mi"},"limits":{"cpu":"100m","memory":"100Mi"}}}]}}' -- curl -s http://demo-app.demo-app.svc.cluster.local:80/api/health
           
           # Проверяем ping endpoint
-          kubectl run test-pod --image=curlimages/curl -n demo-app --rm -it --restart=Never --overrides='{"spec":{"containers":[{"name":"test-pod","image":"curlimages/curl","resources":{"requests":{"cpu":"10m","memory":"10Mi"},"limits":{"cpu":"100m","memory":"100Mi"}}}]}}' -- curl -s http://demo-app:80/api/ping
+          kubectl run test-pod --image=curlimages/curl -n demo-app --rm -it --restart=Never --overrides='{"spec":{"containers":[{"name":"test-pod","image":"curlimages/curl","resources":{"requests":{"cpu":"10m","memory":"10Mi"},"limits":{"cpu":"100m","memory":"100Mi"}}}]}}' -- curl -s http://demo-app.demo-app.svc.cluster.local:80/api/ping
       
       - name: Check pod logs
         if: always()
