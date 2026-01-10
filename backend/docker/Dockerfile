@@ -31,6 +31,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy Python environment from builder
 COPY --from=builder /app/.venv /app/.venv
 
+# Copy requirements and ensure all dependencies are installed
+COPY requirements.txt /app/requirements.txt
+
+# Reinstall dependencies to ensure everything is properly installed
+# This is a safety measure in case something was missed in builder stage
+RUN /app/.venv/bin/pip install --no-cache-dir --upgrade pip && \
+    /app/.venv/bin/pip install --no-cache-dir -r /app/requirements.txt
+
 # Set environment variables
 ENV PATH=/app/.venv/bin:$PATH \
     PYTHONPATH=/app \
@@ -39,15 +47,11 @@ ENV PATH=/app/.venv/bin:$PATH \
     ENVIRONMENT=production \
     PORT=5000
 
-# Copy application code (as root first for installation)
-COPY . .
-
-# Install application in editable mode to make imports work correctly
-RUN /app/.venv/bin/pip install --no-cache-dir -e .
-
 # Create non-root user for security
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser
+
+# Copy application code (copy only what we need, not the entire directory)
+COPY --chown=appuser:appuser src/ /app/src/
 
 # Switch to non-root user
 USER appuser
