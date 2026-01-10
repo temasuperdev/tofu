@@ -12,6 +12,14 @@ metadata:
     ingress.kubernetes.io/force-ssl-redirect: "true"
     # Дополнительные настройки безопасности
     traefik.ingress.kubernetes.io/router.middlewares: "demo-app-https-redirectscheme@kubernetescrd"
+    # Настройки rate limiting
+    traefik.ingress.kubernetes.io/rate-limit: |
+      extractorfunc: client.ip
+      rateset:
+        default:
+          period: 10s
+          average: 100
+          burst: 200
 spec:
   ingressClassName: traefik
   tls:
@@ -41,6 +49,20 @@ spec:
     scheme: https
     permanent: true
 ---
+# Middleware для rate limiting
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+ namespace: demo-app
+spec:
+  rateLimit:
+    average: 100
+    burst: 200
+    sourceCriterion:
+      ipStrategy:
+        depth: 2
+---
 # Resource Quota для namespace
 apiVersion: v1
 kind: ResourceQuota
@@ -66,4 +88,3 @@ spec:
   selector:
     matchLabels:
       app: demo-app
-

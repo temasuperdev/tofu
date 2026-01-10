@@ -3,3 +3,10 @@ Werkzeug
 gunicorn
 python-dotenv
 flask-cors
+flask-limiter
+marshmallow
+validators
+flasgger
+flask-caching
+redis
+structlog

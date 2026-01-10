@@ -1,6 +1,6 @@
 # Makefile для удобства
 
-.PHONY: help install test build deploy clean logs logs-follow port-forward health-check
+.PHONY: help install test build deploy clean logs logs-follow port-forward health-check swagger
 
 IMAGE_REGISTRY ?= ghcr.io
 IMAGE_NAME ?= yourname/tofu
@@ -11,21 +11,27 @@ help:
 	@echo "Available commands:"
 	@echo "  make install       - Install Python dependencies"
 	@echo "  make test          - Run tests"
+	@echo "  make test-cov      - Run tests with coverage report"
 	@echo "  make build         - Build Docker image"
 	@echo "  make deploy        - Deploy to K3s"
+	@echo "  make deploy-redis - Deploy Redis to K3s"
 	@echo "  make clean         - Clean up pods and deployment"
 	@echo "  make logs          - Show application logs"
 	@echo "  make logs-follow   - Follow application logs"
 	@echo "  make port-forward  - Port forward to application"
 	@echo "  make health-check  - Check application health"
 	@echo "  make verify        - Verify deployment"
+	@echo "  make swagger       - Start Swagger UI"
 
 install:
 	pip install -r requirements.txt
-	pip install pytest pytest-cov
+	pip install pytest pytest-cov flasgger
 
 test:
-	pytest tests/ -v --cov=src --cov-report=html
+	pytest tests/ -v
+
+test-cov:
+	pytest tests/ -v --cov=src --cov-report=html --cov-fail-under=80
 	@echo "Coverage report generated in htmlcov/"
 
 build:
@@ -39,6 +45,11 @@ deploy:
 	    k8s/deployment.yaml | kubectl apply -f -
 	kubectl apply -f k8s/ingress.yaml
 	kubectl rollout status deployment/demo-app -n ${NAMESPACE} --timeout=5m
+
+deploy-redis:
+	@echo "Deploying Redis to K3s..."
+	kubectl apply -f k8s/deployment.yaml
+	kubectl rollout status deployment/demo-redis -n ${NAMESPACE} --timeout=5m
 
 clean:
 	kubectl delete namespace ${NAMESPACE} --ignore-not-found
@@ -63,3 +74,6 @@ verify:
 	kubectl get pods -n ${NAMESPACE}
 	@echo "\n=== Service Status ==="
 	kubectl get svc -n ${NAMESPACE}
+
+swagger:
+	python -c "from src.app import app; app.run(debug=True, host='0.0.0.0', port=5000)"

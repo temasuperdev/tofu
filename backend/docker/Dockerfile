@@ -15,6 +15,9 @@ RUN python -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir --upgrade pip && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt
 
+# Clean up pip cache
+RUN /app/.venv/bin/pip cache purge
+
 # Stage 2: Runtime
 FROM python:3.11-slim
 

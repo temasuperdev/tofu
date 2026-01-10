@@ -14,6 +14,18 @@ metadata:
 data:
   ENVIRONMENT: "production"
   PORT: "5000"
+  REDIS_URL: "redis://demo-redis.demo-app.svc.cluster.local:6379/0"
+---
+# Secret для безопасного хранения секретных данных
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: demo-app
+type: Opaque
+data:
+  # Генерируется случайный секретный ключ (например, через: python -c 'import secrets; print(secrets.token_hex(16))' | base64)
+  secret-key: "YzFkMjQ2YzQ4ODIxNGQ2NjdhYTU0MmQxYjJjMzQ1Njc="
 ---
 # Deployment
 apiVersion: apps/v1
@@ -61,7 +73,7 @@ spec:
       # Security context
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
+        runAsUser: 100
         fsGroup: 1000
       
       # Service Account
@@ -95,6 +107,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: secret-key
           
           envFrom:
             - configMapRef:
@@ -180,6 +197,61 @@ spec:
       protocol: TCP
   selector:
     app: demo-app
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-redis
+  namespace: demo-app
+  labels:
+    app: demo-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-redis
+  template:
+    metadata:
+      labels:
+        app: demo-redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 99
+        fsGroup: 999
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 999
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-redis
+  namespace: demo-app
+  labels:
+    app: demo-redis
+spec:
+  selector:
+    app: demo-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
 ---
 # Horizontal Pod Autoscaler
 apiVersion: autoscaling/v2
