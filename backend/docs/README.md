@@ -330,5 +330,6 @@ kubectl delete namespace demo-app
 MIT License - см. [LICENSE](LICENSE)
 
 
+
 ---
 **Готовы начать? Смотрите [QUICKSTART.md](QUICKSTART.md)!** 🚀
