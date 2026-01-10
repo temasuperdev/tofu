@@ -120,25 +120,25 @@ spec:
           args: ["--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "sync", "--timeout", "30", "--access-logfile", "-", "--error-logfile", "-", "src.app:app"]
           
           ports:
-           - name: http
-             containerPort: 5000
-             protocol: TCP
-         
-         env:
-           - name: HOSTNAME
-             valueFrom:
-               fieldRef:
-                 fieldPath: metadata.name
-           - name: NAMESPACE
-             valueFrom:
-               fieldRef:
-                 fieldPath: metadata.namespace
-           - name: POD_IP
-             valueFrom:
-               fieldRef:
-                 fieldPath: status.podIP
-           - name: PYTHONPATH
-             value: "/app/backend"
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: PYTHONPATH
+              value: "/app/backend"
           
           envFrom:
             - configMapRef:
