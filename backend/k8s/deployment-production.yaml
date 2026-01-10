@@ -136,6 +136,13 @@ spec:
                 sleep 2
               done
               echo "✅ Redis is ready! (attempt $COUNTER/$MAX_ATTEMPTS)"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
       
       containers:
         - name: app
