@@ -47,11 +47,19 @@ ENV PATH=/app/.venv/bin:$PATH \
     ENVIRONMENT=production \
     PORT=5000
 
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser
+# Copy application code BEFORE creating user (as root)
+# This ensures proper structure and permissions
+COPY src/ /app/src/
 
-# Copy application code (copy only what we need, not the entire directory)
-COPY --chown=appuser:appuser src/ /app/src/
+# Verify src module structure exists
+RUN ls -la /app/src/ && \
+    test -f /app/src/__init__.py && \
+    test -f /app/src/app.py && \
+    echo "Source files verified"
+
+# Create non-root user for security and change ownership
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser
@@ -64,4 +72,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 5000
 
 # Run application with gunicorn
-CMD ["/app/.venv/bin/gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "sync", "--timeout", "30", "--access-logfile", "-", "--error-logfile", "-", "src.app:app"]
+# PYTHONPATH is already set in ENV, so it will be available
+CMD /app/.venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class sync --timeout 30 --access-logfile - --error-logfile - src.app:app
