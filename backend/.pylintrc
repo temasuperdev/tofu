@@ -1,0 +1,22 @@
+[MASTER]
+# Pylint configuration file
+ignore-patterns=test_.*?py
+
+[FORMAT]
+max-line-length=100
+
+[MESSAGES CONTROL]
+disable=
+    C0114,  # Missing module docstring
+    C0115,  # Missing class docstring  
+    C0116,  # Missing function docstring
+    R0913,  # Too many arguments
+    R0914,  # Too many local variables
+    W0212,  # Protected access
+
+[DESIGN]
+max-attributes=7
+max-arguments=5
+
+[LOGGING]
+logging-format-style=new

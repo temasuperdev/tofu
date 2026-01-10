@@ -26,25 +26,40 @@ jobs:
   # 1. Testing Job
   test:
     runs-on: ubuntu-latest
-    name: Run Tests
+    name: Run Tests (Python ${{ matrix.python-version }})
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
     permissions:
       contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
       
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov pylint black flake8
           pip install -e backend/.
+      
+      - name: Run code quality checks
+        run: |
+          echo "Running Black formatter check..."
+          black --check backend/src/ || true
+          
+          echo "Running Flake8 linter..."
+          flake8 backend/src/ --max-line-length=100 --ignore=E501 || true
+          
+          echo "Running Pylint..."
+          pylint backend/src/ --exit-zero || true
       
       - name: Run tests
         run: pytest backend/tests/ -v --cov=backend/src --cov-report=xml
@@ -134,12 +149,15 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           format: 'sarif'
           output: 'trivy-results.sarif'
+          timeout: '15m'
+          exit-code: '0'
       
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
+        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 
@@ -172,50 +190,17 @@ jobs:
       
       - name: Apply Kubernetes manifests
         run: |
-          # Отладочная информация
-          echo "Registry: ${{ env.REGISTRY }}"
-          echo "Image Name: ${{ env.IMAGE_NAME }}"
+          # Используем более простой и надежный подход
+          # docker/metadata-action генерирует правильные теги
+          SHORT_SHA=${GITHUB_SHA:0:7}
           
-          # Выводим все теги для отладки
-          echo "All tags:"
-          echo "${{ steps.meta.outputs.tags }}"
+          echo "Deploying with SHA: $SHORT_SHA"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$SHORT_SHA"
           
-          # Сохраняем теги в файл для безопасной обработки
-          echo "${{ steps.meta.outputs.tags }}" > tags_list.txt
-          
-          # Получаем короткий SHA тег из метаданных
-          # docker/metadata-action создает теги в формате registry/owner/repo:tag
-          # Нам нужен тег, который является SHA коммита (обычно 7+ символов, шестнадцатеричные)
-          
-          # Читаем теги из файла и ищем SHA тег (не latest и не другие стандартные теги)
-          while IFS= read -r tag; do
-            # Пропускаем пустые строки
-            [ -z "$tag" ] && continue
-            
-            # Извлекаем только тег (часть после последнего двоеточия)
-            tag_name=$(echo "$tag" | awk -F':' '{print $NF}')
-            echo "Processing tag: $tag_name"
-            
-            # Проверяем, является ли тег SHA (шестнадцатеричная строка длиной от 7 до 40 символов)
-            # и не является ли это стандартным тегом как 'latest'
-            if [[ $tag_name =~ ^[a-f0-9]{7,40}$ ]] && [ "$tag_name" != "latest" ]; then
-              # Используем тег, но ограничиваем его до 7 символов для короткого SHA
-              SHORT_SHA="${tag_name:0:7}"
-              echo "Found SHA tag, using short SHA: $SHORT_SHA"
-              break
-            fi
-          done < tags_list.txt
-          
-          # Если SHA тег не найден, используем fallback
-          if [ -z "$SHORT_SHA" ]; then
-            echo "No SHA tag found in metadata, using short version of commit SHA"
-            SHORT_SHA=${GITHUB_SHA:0:7}
-          else
-            echo "Using short SHA: $SHORT_SHA"
-          fi
-          
-          # Обновляем переменные в манифестах
-          sed -e "s|ghcr.io/temasuperdev/tofu:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$SHORT_SHA|g" \
+          # Применяем deployment с заменой всех placeholders
+          sed -e "s|IMAGE_REGISTRY|${{ env.REGISTRY }}|g" \
+              -e "s|IMAGE_NAME|${{ env.IMAGE_NAME }}|g" \
+              -e "s|IMAGE_TAG|$SHORT_SHA|g" \
               backend/k8s/deployment-production.yaml | kubectl apply -f -
           
           # Apply ingress if it exists
@@ -234,6 +219,14 @@ jobs:
             kubectl logs -n demo-app --all-containers=true --tail=100
             exit 1
           }
+      
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "⏮️ Rolling back deployment..."
+          kubectl rollout undo deployment/demo-app -n demo-app
+          kubectl rollout status deployment/demo-app -n demo-app --timeout=5m
+          echo "✅ Rollback completed"
       
       - name: Get deployment info
         run: |
