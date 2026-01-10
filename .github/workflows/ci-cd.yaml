@@ -321,20 +321,20 @@ jobs:
           # Проверяем что приложение запущено и отвечает
           kubectl get pods -n demo-app
           
-          # Удаляем старые тестовые pod'ы, если они существуют
-          kubectl delete pod test-pod-info test-pod-health test-pod-ping -n demo-app --ignore-not-found=true
+          # Получаем имя одного из pod'ов приложения
+          POD_NAME=$(kubectl get pods -n demo-app -l app=demo-app -o jsonpath='{.items[0].metadata.name}')
           
-          # Ждем немного, чтобы старые pod'ы были полностью удалены
-          sleep 5
-          
-          # Пробуем получить информацию через API
-          kubectl run test-pod-info --image=curlimages/curl:latest -n demo-app --restart=Never --rm -i --overrides='{"spec":{"containers":[{"name":"test-pod-info","image":"curlimages/curl:latest","resources":{"requests":{"cpu":"10m","memory":"64Mi"},"limits":{"cpu":"100m","memory":"128Mi"}}}]}}' -- curl -s 'http://demo-app:80/api/info'
+          # Устанавливаем curl в pod, если его нет
+          kubectl exec -n demo-app $POD_NAME -- which curl || kubectl exec -n demo-app $POD_NAME -- apk add --no-cache curl
           
           # Проверяем health endpoint
-          kubectl run test-pod-health --image=curlimages/curl:latest -n demo-app --restart=Never --rm -i --overrides='{"spec":{"containers":[{"name":"test-pod-health","image":"curlimages/curl:latest","resources":{"requests":{"cpu":"10m","memory":"64Mi"},"limits":{"cpu":"100m","memory":"128Mi"}}}]}}' -- curl -s 'http://demo-app:80/api/health'
+          kubectl exec -n demo-app $POD_NAME -- curl -s 'http://localhost:5000/api/health'
+          
+          # Проверяем info endpoint
+          kubectl exec -n demo-app $POD_NAME -- curl -s 'http://localhost:5000/api/info'
           
           # Проверяем ping endpoint
-          kubectl run test-pod-ping --image=curlimages/curl:latest -n demo-app --restart=Never --rm -i --overrides='{"spec":{"containers":[{"name":"test-pod-ping","image":"curlimages/curl:latest","resources":{"requests":{"cpu":"10m","memory":"64Mi"},"limits":{"cpu":"100m","memory":"128Mi"}}}]}}' -- curl -s 'http://demo-app:80/api/ping'
+          kubectl exec -n demo-app $POD_NAME -- curl -s 'http://localhost:5000/api/ping'
       
       - name: Check pod logs
         if: always()
