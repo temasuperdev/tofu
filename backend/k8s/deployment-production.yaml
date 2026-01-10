@@ -111,7 +111,7 @@ spec:
         - name: app
           # Используем образ из GitHub Container Registry
           # В CI/CD пайплайне это будет заменено на реальный образ с SHA тегом
-          image: ghcr.io/temasuperdev/tofu:24bf08cfa23702dc9b13fa6a2a773ea914693543
+          image: ghcr.io/temasuperdev/tofu:latest
           imagePullPolicy: Always
           
           workingDir: /app/backend
