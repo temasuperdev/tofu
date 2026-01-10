@@ -89,6 +89,7 @@ spec:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  revisionHistoryLimit: 3  # Ограничиваем историю ревизий
   selector:
     matchLabels:
       app: demo-app
@@ -116,21 +117,29 @@ spec:
           command: ['sh', '-c']
           args:
             - |
-              echo "Waiting for Redis to be ready..."
-              until nc -z demo-redis.demo-app.svc.cluster.local 6379; do
-                echo "Redis not ready, waiting..."
+              set -e
+              echo "Waiting for Redis to be ready at demo-redis.demo-app.svc.cluster.local:6379..."
+              COUNTER=0
+              MAX_ATTEMPTS=60
+              while ! nc -z -w 1 demo-redis.demo-app.svc.cluster.local 6379 2>/dev/null; do
+                COUNTER=$((COUNTER + 1))
+                if [ $COUNTER -ge $MAX_ATTEMPTS ]; then
+                  echo "❌ Redis connection timeout after $MAX_ATTEMPTS attempts"
+                  exit 1
+                fi
+                echo "Redis not ready, waiting... (attempt $COUNTER/$MAX_ATTEMPTS)"
                 sleep 2
               done
-              echo "Redis is ready!"
+              echo "✅ Redis is ready!"
       
       containers:
         - name: app
           # Используем образ из GitHub Container Registry
           # В CI/CD пайплайне это будет заменено на реальный образ с SHA тегом
-          image: ghcr.io/temasuperdev/tofu:latest
+          image: IMAGE_REGISTRY/IMAGE_NAME:IMAGE_TAG
           imagePullPolicy: Always
           
-          workingDir: /app/backend
+          workingDir: /app
           
           command: ["/app/.venv/bin/gunicorn"]
           args: ["--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "sync", "--timeout", "30", "--access-logfile", "-", "--error-logfile", "-", "src.app:app"]
