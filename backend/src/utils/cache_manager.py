@@ -32,15 +32,14 @@ class CacheManager:
             # Проверяем подключение
             self.redis_client.ping()
             self.redis_available = True
-            self.logger.info("Redis cache initialized successfully", redis_url=self.redis_url)
+            self.logger.info(f"Redis cache initialized successfully (redis_url={self.redis_url})")
         except Exception as e:
             # Если Redis недоступен, используем простой кэш в памяти
             self.redis_available = False
+            error_type = type(e).__name__
             self.logger.warning(
-                "Redis not available, using simple cache instead",
-                redis_url=self.redis_url,
-                error=str(e),
-                error_type=type(e).__name__
+                f"Redis not available, using simple cache instead (redis_url={self.redis_url}, "
+                f"error={str(e)}, error_type={error_type})"
             )
             app.config['CACHE_TYPE'] = 'simple'
             self.cache = Cache(app)
@@ -64,7 +63,7 @@ class CacheManager:
         """
         if not self.redis_available and not self.redis_error_logged:
             # Логируем только один раз, если Redis недоступен
-            self.logger.debug("Using simple cache (Redis unavailable)", redis_url=self.redis_url)
+            self.logger.debug(f"Using simple cache (Redis unavailable, redis_url={self.redis_url})")
             self.redis_error_logged = True
         
         try:
@@ -72,12 +71,10 @@ class CacheManager:
         except Exception as e:
             # Логируем ошибки только при работе с Redis (не для simple cache)
             if self.redis_available and not self.redis_error_logged:
+                error_type = type(e).__name__
                 self.logger.warning(
-                    "Cache operation failed, falling back to no-cache mode",
-                    operation="set",
-                    key=key,
-                    error=str(e),
-                    error_type=type(e).__name__
+                    f"Cache operation failed, falling back to no-cache mode "
+                    f"(operation=set, key={key}, error={str(e)}, error_type={error_type})"
                 )
                 self.redis_error_logged = True
                 # Переключаемся на simple cache при ошибке
@@ -90,7 +87,7 @@ class CacheManager:
         """
         if not self.redis_available and not self.redis_error_logged:
             # Логируем только один раз, если Redis недоступен
-            self.logger.debug("Using simple cache (Redis unavailable)", redis_url=self.redis_url)
+            self.logger.debug(f"Using simple cache (Redis unavailable, redis_url={self.redis_url})")
             self.redis_error_logged = True
         
         try:
@@ -98,12 +95,10 @@ class CacheManager:
         except Exception as e:
             # Логируем ошибки только при работе с Redis (не для simple cache)
             if self.redis_available and not self.redis_error_logged:
+                error_type = type(e).__name__
                 self.logger.warning(
-                    "Cache operation failed, falling back to no-cache mode",
-                    operation="get",
-                    key=key,
-                    error=str(e),
-                    error_type=type(e).__name__
+                    f"Cache operation failed, falling back to no-cache mode "
+                    f"(operation=get, key={key}, error={str(e)}, error_type={error_type})"
                 )
                 self.redis_error_logged = True
                 # Переключаемся на simple cache при ошибке
