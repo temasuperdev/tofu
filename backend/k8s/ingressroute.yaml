@@ -1,9 +1,9 @@
 ---
-# IngressRoute для Traefik
+# IngressRoute для HTTP (редирект на HTTPS)
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: demo-app
+  name: demo-app-http
   namespace: demo-app
 spec:
   entryPoints:
@@ -14,12 +14,14 @@ spec:
       services:
         - name: demo-app
           port: 80
+      middlewares:
+        - name: https-redirectscheme
 ---
-# IngressRoute для редиректа HTTP на HTTPS
+# IngressRoute для HTTPS
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: demo-app-https-redirect
+  name: demo-app-https
   namespace: demo-app
 spec:
   entryPoints:
@@ -30,7 +32,5 @@ spec:
       services:
         - name: demo-app
           port: 80
-      middlewares:
-        - name: https-redirectscheme
   tls:
     secretName: demo-app-tls
