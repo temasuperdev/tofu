@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.12']
     permissions:
       contents: read
     steps:
@@ -146,14 +146,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
+      - name: Set short SHA
+        id: short_sha
+        run: echo "sha7=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+      
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.short_sha.outputs.sha7 }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           timeout: '15m'
           exit-code: '0'
+          skip-upload: false
       
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
