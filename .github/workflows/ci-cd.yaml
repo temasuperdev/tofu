@@ -208,8 +208,8 @@ jobs:
           
           # Если SHA тег не найден, используем fallback
           if [ -z "$SHORT_SHA" ]; then
-            echo "No SHA tag found in metadata, using full SHA"
-            SHORT_SHA=${{ github.sha }}
+            echo "No SHA tag found in metadata, using short version of commit SHA"
+            SHORT_SHA=${GITHUB_SHA:0:7}
           else
             echo "Using short SHA: $SHORT_SHA"
           fi
