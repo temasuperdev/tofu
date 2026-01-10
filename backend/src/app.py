@@ -44,6 +44,7 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"]
 )
 
+
 # Attach limiter to app
 limiter.init_app(app)
 
