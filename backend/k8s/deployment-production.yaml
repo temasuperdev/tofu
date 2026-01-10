@@ -9,6 +9,46 @@ metadata:
 
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-app
+  namespace: demo-app
+secrets:
+- name: regcred
+imagePullSecrets:
+- name: regcred
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: demo-app
+  namespace: demo-app
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: demo-app
+  namespace: demo-app
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: demo-app
+subjects:
+  - kind: ServiceAccount
+    name: demo-app
+    namespace: demo-app
+
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app-config
@@ -16,6 +56,24 @@ metadata:
 data:
   APP_VERSION: "1.0.0"
   ENVIRONMENT: "production"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+  namespace: demo-app
+  labels:
+    app: demo-app
+spec:
+  type: ClusterIP
+  selector:
+    app: demo-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 5000
 
 ---
 apiVersion: apps/v1
@@ -43,7 +101,7 @@ spec:
         version: v1
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "5000"
+        prometheus.io/port: "500"
         prometheus.io/path: "/metrics"
     spec:
       tolerations:
@@ -136,24 +194,6 @@ spec:
           emptyDir: {}
 
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: demo-app
-  namespace: demo-app
-  labels:
-    app: demo-app
-spec:
-  type: ClusterIP
-  selector:
-    app: demo-app
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 5000
-
----
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -179,39 +219,3 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: demo-app
-  namespace: demo-app
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: demo-app
-  namespace: demo-app
-rules:
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["configmaps"]
-    verbs: ["get"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: demo-app
-  namespace: demo-app
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: demo-app
-subjects:
-  - kind: ServiceAccount
-    name: demo-app
-    namespace: demo-app
