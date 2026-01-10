@@ -141,9 +141,9 @@ spec:
             httpGet:
               path: /api/health
               port: http
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 3
           
           # Startup probe - дает время на инициализацию
@@ -151,10 +151,10 @@ spec:
             httpGet:
               path: /api/health
               port: http
-            initialDelaySeconds: 0
+            initialDelaySeconds: 5
             periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 10
+            timeoutSeconds: 10
+            failureThreshold: 20
           
           # Security context для контейнера
           securityContext:
