@@ -37,6 +37,7 @@ HTML_TEMPLATE = """
         .info { background-color: #e8f4f8; padding: 15px; border-left: 4px solid #00bcd4; margin: 20px 0; }
         code { background-color: #f0f0; padding: 2px 6px; border-radius: 3px; }
         .endpoint { background-color: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .notes-section { background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -62,6 +63,28 @@ HTML_TEMPLATE = """
         </div>
         <div class="endpoint">
             <code>GET /metrics</code> - Prometheus метрики
+        </div>
+        
+        <div class="notes-section">
+            <h3>📝 Управление заметками (Notes API):</h3>
+            <div class="endpoint">
+                <code>POST /api/notes</code> - Создать новую заметку (rate limited to 20/min)
+            </div>
+            <div class="endpoint">
+                <code>GET /api/notes</code> - Получить все заметки (с пагинацией: skip, limit)
+            </div>
+            <div class="endpoint">
+                <code>GET /api/notes/<id></code> - Получить заметку по ID
+            </div>
+            <div class="endpoint">
+                <code>PUT /api/notes/<id></code> - Обновить заметку (rate limited to 30/min)
+            </div>
+            <div class="endpoint">
+                <code>DELETE /api/notes/<id></code> - Удалить заметку (rate limited to 10/min)
+            </div>
+            <div class="endpoint">
+                <code>GET /api/notes/search?q=<query></code> - Поиск заметок по заголовку или содержимому
+            </div>
         </div>
     </div>
 </body>
