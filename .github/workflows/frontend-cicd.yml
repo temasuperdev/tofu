@@ -2,11 +2,20 @@ name: Frontend CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
-    paths: [ 'frontend/**' ]
+    branches: [ main, develop, init ]
+    paths:
+      - 'frontend/**'
+      - 'charts/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main ]
-    paths: [ 'frontend/**' ]
+    paths:
+      - 'frontend/**'
+      - 'charts/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
 
 env:
   REGISTRY: localhost:5000
@@ -73,7 +82,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    environment: production
 
     steps:
     - name: Checkout
@@ -85,4 +93,4 @@ jobs:
         helm upgrade --install notes-app ./charts/notes-app \
           --set frontend.image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
           --set frontend.image.tag=${{ github.sha }} \
-          -f values.yaml
+          -f ./charts/notes-app/values.yaml

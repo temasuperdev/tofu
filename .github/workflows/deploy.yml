@@ -11,12 +11,14 @@ on:
         description: 'Frontend image tag to deploy'
         required: true
         default: 'latest'
+  repository_dispatch:
+    types: [deploy-production]
 
 env:
   REGISTRY: localhost:5000
 
 jobs:
-  deploy:
+ deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -40,7 +42,7 @@ jobs:
           --set backend.image.tag=${{ github.event.inputs.backend_image_tag }} \
           --set frontend.image.repository=${{ env.REGISTRY }}/notes-frontend \
           --set frontend.image.tag=${{ github.event.inputs.frontend_image_tag }} \
-          -f values.yaml \
+          -f ./charts/notes-app/values.yaml \
           --timeout 10m
 
     - name: Verify deployment
