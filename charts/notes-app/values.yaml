@@ -81,11 +81,7 @@ postgresql:
     persistentVolumeClaimRetentionPolicy:
       whenDeleted: Retain
       whenScaled: Retain
- architecture: standalone
-  auth:
-    enablePostgresUser: true
-    postgresPassword: "strong-password"
-    database: "notesdb"
+  architecture: standalone
 
 # Настройки мониторинга
 monitoring:
