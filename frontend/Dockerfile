@@ -3,10 +3,13 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 COPY . .
 RUN npm run build
+
+# Удаление devDependencies для уменьшения размера конечного образа
+RUN npm prune --production
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
