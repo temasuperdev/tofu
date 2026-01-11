@@ -100,7 +100,7 @@ def test_create_category(client, test_user):
     
     data = response.json()
     assert data["name"] == "API Test Category"
-    assert data["owner_id"] == test_user.id
+    assert data["user_id"] == test_user.id
 
 
 def test_get_categories(client, test_user):
@@ -150,7 +150,7 @@ def test_create_note(client, test_user, test_category):
     data = response.json()
     assert data["title"] == "API Test Note"
     assert data["content"] == "This is a test note created via API"
-    assert data["owner_id"] == test_user.id
+    assert data["user_id"] == test_user.id
     assert data["category_id"] == test_category.id
 
 

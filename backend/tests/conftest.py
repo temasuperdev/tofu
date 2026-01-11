@@ -9,6 +9,7 @@ from app.main import app
 from app.models.user import User
 from app.models.note import Note
 from app.models.category import Category
+from app.security.password import get_password_hash
 
 
 @pytest.fixture(scope="session")
@@ -45,11 +46,11 @@ def client(db_session):
 def test_user(db_session):
     # Генерируем уникальные значения для каждого теста
     unique_id = str(uuid.uuid4())
-    # Создаем пользователя без хэширования пароля, чтобы избежать проблем с bcrypt
+    # Создаем пользователя с правильным хешированием пароля
     user_data = {
         "username": f"testuser_{unique_id[:8]}",
         "email": f"test_{unique_id[:8]}@example.com",
-        "password_hash": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"  # Хардкод хэша для 'password'
+        "password_hash": get_password_hash("password")
     }
     user = User(**user_data)
     db_session.add(user)
@@ -60,8 +61,9 @@ def test_user(db_session):
 
 @pytest.fixture
 def test_category(db_session, test_user):
+    unique_id = str(uuid.uuid4())[:8]
     category_data = {
-        "name": "Test Category Main",
+        "name": f"Test Category {unique_id}",
         "user_id": test_user.id  # Обновлено поле на user_id, а не owner_id
     }
     category = Category(**category_data)

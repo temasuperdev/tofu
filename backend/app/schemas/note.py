@@ -7,6 +7,7 @@ class NoteBase(BaseModel):
     content: Optional[str] = None
     is_public: bool = False
     category: Optional[str] = None
+    category_id: Optional[int] = None
     tags: Optional[List[str]] = []
 
     @field_validator('title')
@@ -24,11 +25,13 @@ class NoteUpdate(BaseModel):
     content: Optional[str] = None
     is_public: Optional[bool] = None
     category: Optional[str] = None
+    category_id: Optional[int] = None
     tags: Optional[List[str]] = None
 
 class NoteResponse(NoteBase):
     id: int
     user_id: int
+    category_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     

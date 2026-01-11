@@ -18,6 +18,7 @@ def create_note(db: Session, note: NoteCreate, user_id: int):
         title=note.title,
         content=note.content,
         user_id=user_id,
+        category_id=getattr(note, 'category_id', None),  # Используем category_id, если доступен
         is_public=note.is_public,
         category_name=note.category,  # Сохраняем как строку
         tags=tags_str
@@ -29,8 +30,14 @@ def create_note(db: Session, note: NoteCreate, user_id: int):
 
 def update_note(db: Session, note_id: int, note: NoteUpdate):
     db_note = db.query(Note).filter(Note.id == note_id).first()
+    if not db_note:
+        return None
+        
+    # Обновляем поля, исключая те, которые не должны быть обновлены
     for field, value in note.dict(exclude_unset=True).items():
-        setattr(db_note, field, value)
+        if hasattr(db_note, field):
+            setattr(db_note, field, value)
+    
     db.commit()
     db.refresh(db_note)
     return db_note
