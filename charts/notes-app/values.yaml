@@ -77,7 +77,11 @@ postgresql:
       scriptsConfigMap: null
     updateStrategy:
       type: RollingUpdate
-  architecture: standalone
+    # Указываем политику хранения PVC, чтобы избежать конфликта при обновлении
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+ architecture: standalone
   auth:
     enablePostgresUser: true
     postgresPassword: "strong-password"

@@ -30,7 +30,7 @@ if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
         helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --dry-run --debug > /tmp/helm-dry-run-output.yaml 2>&1
     
         # Если есть конфликт с PVC, возможно, нужно удалить старый StatefulSet
-        if grep -q "PersistentVolumeClaimRetentionPolicy" /tmp/helm-dry-run-output.yaml; then
+        if grep -q "PersistentVolumeClaimRetentionPolicy\|volumeClaimTemplates" /tmp/helm-dry-run-output.yaml; then
             echo "Обнаружены потенциальные конфликты с PVC, сохраняем данные и готовимся к обновлению..."
             
             # Резервное копирование данных (опционально)
@@ -38,7 +38,7 @@ if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
             
             # Проверяем, можно ли выполнить обновление с флагом --force
             echo "Пытаемся выполнить обновление с флагами --force и --atomic=false"
-            helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --install --atomic=false --timeout=10m
+            helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --install --atomic=false --timeout=10m --set postgresql.primary.persistentVolumeClaimRetentionPolicy.whenDeleted=Retain --set postgresql.primary.persistentVolumeClaimRetentionPolicy.whenScaled=Retain
         else
             # Обычное обновление
             echo "Конфликтов не обнаружено, выполняем стандартное обновление"
