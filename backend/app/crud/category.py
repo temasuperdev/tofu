@@ -12,7 +12,7 @@ def get_categories(db: Session, skip: int = 0, limit: int = 100, user_id: int = 
     return query.offset(skip).limit(limit).all()
 
 def create_category(db: Session, category: CategoryCreate, user_id: int):
-    db_category = Category(**category.dict(), user_id=user_id)
+    db_category = Category(**category.model_dump(), user_id=user_id)
     db.add(db_category)
     db.commit()
     db.refresh(db_category)
@@ -20,7 +20,7 @@ def create_category(db: Session, category: CategoryCreate, user_id: int):
 
 def update_category(db: Session, category_id: int, category: CategoryUpdate):
     db_category = db.query(Category).filter(Category.id == category_id).first()
-    for field, value in category.dict(exclude_unset=True).items():
+    for field, value in category.model_dump(exclude_unset=True).items():
         setattr(db_category, field, value)
     db.commit()
     db.refresh(db_category)

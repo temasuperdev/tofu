@@ -1,8 +1,9 @@
-from pydantic import BaseModel, field_validator, EmailStr
+from pydantic import BaseModel, field_validator, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
 class UserBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     username: str
     email: EmailStr
 
@@ -32,6 +33,7 @@ class UserCreate(UserBase):
         return v
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     username: Optional[str] = None
     email: Optional[str] = None
 
@@ -40,9 +42,6 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     is_active: bool
-    
-    class Config:
-        from_attributes = True
 
 # Для обратной совместимости
 User = UserResponse

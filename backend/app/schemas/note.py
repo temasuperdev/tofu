@@ -1,8 +1,9 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
 class NoteBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     title: str
     content: Optional[str] = None
     is_public: bool = False
@@ -21,6 +22,7 @@ class NoteCreate(NoteBase):
     pass
 
 class NoteUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     title: Optional[str] = None
     content: Optional[str] = None
     is_public: Optional[bool] = None
@@ -28,20 +30,12 @@ class NoteUpdate(BaseModel):
     category_id: Optional[int] = None
     tags: Optional[List[str]] = None
 
-from pydantic import BaseModel, field_validator
-from typing import Optional, List
-from datetime import datetime
-import json
-
 class NoteResponse(NoteBase):
     id: int
     user_id: int
     category_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
     
     @field_validator('tags', mode='before')
     @classmethod

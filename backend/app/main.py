@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.api.v1 import router as api_v1_router
 from app.database import Base, init_db_engine
@@ -6,10 +7,18 @@ from app.metrics import MetricsMiddleware
 from starlette.responses import Response
 from prometheus_client import generate_latest
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Инициализация подключения к БД при запуске приложения
+    init_db_engine()
+    yield
+    # Здесь можно добавить логику завершения работы приложения
+
 app = FastAPI(
     title="Notes API",
     description="API для управления заметками",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Добавление middleware для метрик
@@ -17,11 +26,6 @@ app.add_middleware(MetricsMiddleware)
 
 # Подключение маршрутов
 app.include_router(api_v1_router, prefix="/api/v1")
-
-@app.on_event("startup")
-def startup_event():
-    # Инициализация подключения к БД при запуске приложения
-    init_db_engine()
 
 @app.get("/")
 def read_root():
