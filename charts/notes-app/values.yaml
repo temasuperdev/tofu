@@ -1,7 +1,7 @@
 # Общие настройки
 global:
   domain: "serv.temasuug.ru"
-  namespace: "notes-app"
+  namespace: "note"
   repositoryOwner: "your-username"
 
 # Настройки фронтенда
@@ -38,7 +38,7 @@ backend:
   replicaCount: 2
   image:
     repository: "ghcr.io/{{ .Values.global.repositoryOwner }}/notes-backend"
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
   service:
     type: ClusterIP
