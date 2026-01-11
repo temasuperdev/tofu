@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 import uuid
+from contextlib import contextmanager
 
 from app.database import Base, get_db
 from app.main import app
@@ -36,10 +37,14 @@ def db_session(engine, tables):
 @pytest.fixture
 def client(db_session):
     def override_get_db():
-        yield db_session
+        try:
+            yield db_session
+        finally:
+            pass  # Не закрываем сессию здесь, так как она управляется фикстурой
     
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client
     app.dependency_overrides.clear()
 
 

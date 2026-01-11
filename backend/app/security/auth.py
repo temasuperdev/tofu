@@ -11,15 +11,21 @@ from app.database import get_db
 from app.crud.user import get_user_by_username
 
 # Настройка хеширования паролей
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__ident="2b", bcrypt__rounds=12)
 
 # Настройка OAuth2 схемы
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 def verify_password(plain_password, hashed_password):
+    # Ограничиваем длину пароля до 72 символов, как того требует bcrypt
+    if len(plain_password) > 72:
+        plain_password = plain_password[:72]
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
+    # Ограничиваем длину пароля до 72 символов, как того требует bcrypt
+    if len(password) > 72:
+        password = password[:72]
     return pwd_context.hash(password)
 
 def authenticate_user(db: Session, username: str, password: str):

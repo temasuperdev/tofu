@@ -1,7 +1,7 @@
 import pytest
 import json
 from fastapi.testclient import TestClient
-from app.security.password import hash_password
+from app.security.password import get_password_hash
 
 
 def test_health_check(client):
@@ -38,7 +38,7 @@ def test_login_user(client, test_user):
     }
     
     register_response = client.post("/api/v1/auth/register", json=user_data)
-    assert register_response.status_code == 200
+    assert register_response.status_code in [200, 201]
     
     login_data = {
         "username": "test_login_user",

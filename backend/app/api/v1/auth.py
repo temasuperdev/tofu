@@ -38,10 +38,7 @@ def register(register_request: RegisterRequest, db: Session = Depends(get_db)):
             detail="Username already registered"
         )
     
-    # Хешируем пароль
-    hashed_password = get_password_hash(register_request.password)
-    
-    # Создаем пользователя
+    # Создаем пользователя (функция create_user сама захеширует пароль)
     user = create_user(
         db=db,
         username=register_request.username,
