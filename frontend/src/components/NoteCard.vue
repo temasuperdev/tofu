@@ -12,6 +12,7 @@
       <div class="note-tags">
         <span class="tag" v-for="tag in note.tags" :key="tag">{{ tag }}</span>
       </div>
+    </div>
     
     <div class="note-actions">
       <button @click="$emit('edit', note)" class="btn btn-secondary">Редактировать</button>
@@ -82,7 +83,7 @@ export default {
 .note-category {
   background: #e3f2fd;
   color: #1976d2;
- padding: 4px 8px;
+  padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.8em;
 }
