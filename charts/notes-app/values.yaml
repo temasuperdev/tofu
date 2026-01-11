@@ -44,7 +44,7 @@ backend:
     type: ClusterIP
     port: 8000
   env:
-    DATABASE_URL: "postgresql://postgres:password@notes-postgresql:5432/notesdb"
+    DATABASE_URL: "postgresql://postgres:strong-password@notes-postgresql:5432/notesdb"
     SECRET_KEY: "your-secret-key-here"
     ALGORITHM: "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: 30
@@ -55,13 +55,18 @@ backend:
 # Настройки PostgreSQL
 postgresql:
   enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: "15.6.0-debian-12-r2"  # Используем доступный тег вместо несуществующего 16.2.0-debian-12-r5
   auth:
     postgresPassword: "strong-password"
     database: "notesdb"
-  persistence:
-    enabled: true
-    size: 10Gi
-    storageClass: "local-path"
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "local-path"
 
 # Настройки мониторинга
 monitoring:
