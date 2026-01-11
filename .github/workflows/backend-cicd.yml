@@ -13,7 +13,7 @@ env:
   IMAGE_NAME: notes-backend
 
 jobs:
- test:
+  test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -87,7 +87,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    environment: production
 
     steps:
     - name: Checkout
@@ -99,4 +98,4 @@ jobs:
         helm upgrade --install notes-app ./charts/notes-app \
           --set backend.image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
           --set backend.image.tag=${{ github.sha }} \
-          -f values.yaml
+          -f ./charts/notes-app/values.yaml
