@@ -2,6 +2,7 @@
 
 echo "Установка зависимостей..."
 pip install --upgrade pip
+pip install pydantic[email]
 pip install -r requirements.txt
 
 echo "Запуск тестов..."
