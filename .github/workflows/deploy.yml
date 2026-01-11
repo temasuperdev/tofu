@@ -29,14 +29,35 @@ jobs:
       uses: azure/setup-kubectl@v3
       with:
         version: 'latest'
+        
+    - name: Setup Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 'latest'
+
+    - name: Add Helm repositories
+      run: |
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+        helm repo add jetstack https://charts.jetstack.io
+        helm repo update
 
     - name: Configure kubectl
       run: |
         mkdir -p ~/.kube
         echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        kubectl cluster-info
+        kubectl get nodes
 
+    - name: Verify cluster connectivity
+      run: |
+        kubectl cluster-info
+        kubectl get pods -A
+        
     - name: Update Helm release
       run: |
+        helm dependency update ./charts/notes-app
         helm upgrade --install notes-app ./charts/notes-app \
           --set backend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-backend \
           --set backend.image.tag=${{ github.event.inputs.backend_image_tag }} \
