@@ -15,7 +15,7 @@
 import { mapActions } from 'vuex';
 
 export default {
-  name: 'Navigation',
+  name: 'AppNavigation',
   methods: {
     ...mapActions('auth', ['logout'])
   }

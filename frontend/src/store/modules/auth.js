@@ -31,47 +31,32 @@ const mutations = {
 
 const actions = {
   async login({ commit }, credentials) {
-    try {
-      const response = await authAPI.login(credentials);
-      const { access_token } = response;
-      
-      commit('SET_TOKEN', access_token);
-      
-      // Получаем информацию о пользователе
-      const userResponse = await authAPI.getCurrentUser();
-      commit('SET_USER', userResponse);
-      
-      return true;
-    } catch (error) {
-      throw error;
-    }
+    const response = await authAPI.login(credentials);
+    const { access_token } = response;
+    
+    commit('SET_TOKEN', access_token);
+    
+    // Получаем информацию о пользователе
+    const userResponse = await authAPI.getCurrentUser();
+    commit('SET_USER', userResponse);
+    
+    return true;
   },
   
-  async register({ commit }, userData) {
-    try {
-      const response = await authAPI.register(userData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
+   async register({ commit }, userData) { // eslint-disable-line no-unused-vars
+     const response = await authAPI.register(userData);
+     return response;
+   },
   
-  logout({ commit }) {
-    authAPI.logout();
-    commit('CLEAR_AUTH');
-  },
+   logout({ commit }) { // eslint-disable-line no-unused-vars
+     authAPI.logout();
+     commit('CLEAR_AUTH');
+   },
   
-  async fetchCurrentUser({ commit }) {
-    try {
-      const response = await authAPI.getCurrentUser();
-      commit('SET_USER', response);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      // Если запрос не удался, очищаем аутентификацию
-      commit('CLEAR_AUTH');
-      throw error;
-    }
-  },
+   async fetchCurrentUser({ commit }) {
+     const response = await authAPI.getCurrentUser();
+     commit('SET_USER', response);
+   },
 };
 
 export default {
