@@ -90,7 +90,7 @@ jobs:
       run: npm run lint
 
     - name: Run tests
-      run: npm run test:unit
+      run: ./run_tests.sh
 
     - name: Run build
       run: npm run build
