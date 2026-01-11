@@ -1,4 +1,4 @@
-name: Main CI/CD Pipeline
+name: Unified CI/CD Pipeline
 
 on:
   push:
@@ -137,8 +137,8 @@ jobs:
         context: ./${{ matrix.service }}
         push: true
         tags: |
-          ${{ env.REGISTRY }}/notes-${{ matrix.service }}:latest
-          ${{ env.REGISTRY }}/notes-${{ matrix.service }}:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-${{ matrix.service }}:latest
+          ${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-${{ matrix.service }}:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 

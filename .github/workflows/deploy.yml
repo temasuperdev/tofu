@@ -15,7 +15,7 @@ on:
     types: [deploy-production]
 
 env:
-  REGISTRY: localhost:5000
+  REGISTRY: ghcr.io
 
 jobs:
  deploy:
@@ -38,10 +38,12 @@ jobs:
     - name: Update Helm release
       run: |
         helm upgrade --install notes-app ./charts/notes-app \
-          --set backend.image.repository=${{ env.REGISTRY }}/notes-backend \
+          --set backend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-backend \
           --set backend.image.tag=${{ github.event.inputs.backend_image_tag }} \
-          --set frontend.image.repository=${{ env.REGISTRY }}/notes-frontend \
+          --set backend.image.pullPolicy=IfNotPresent \
+          --set frontend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-frontend \
           --set frontend.image.tag=${{ github.event.inputs.frontend_image_tag }} \
+          --set frontend.image.pullPolicy=IfNotPresent \
           -f ./charts/notes-app/values.yaml \
           --timeout 10m
 
