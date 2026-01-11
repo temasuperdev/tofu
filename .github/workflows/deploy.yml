@@ -59,7 +59,10 @@ jobs:
       run: |
         helm dependency update ./charts/notes-app
         kubectl delete secret notes-app-db-secret notes-app-app-secret --namespace note || true
+        kubectl delete secret notes-app-postgresql --namespace note || true
         helm uninstall notes-app --namespace note || true
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo update
         helm upgrade --install notes-app ./charts/notes-app \
           --set backend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-backend \
           --set backend.image.tag=${{ github.event.inputs.backend_image_tag }} \
