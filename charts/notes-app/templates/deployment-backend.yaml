@@ -3,22 +3,30 @@ kind: Deployment
 metadata:
   name: {{ include "notes-app.fullname" . }}-backend
   labels:
-    {{- include "notes-app.labels" . | nindent 4 }}
+    helm.sh/chart: {{ include "notes-app.chart" . | quote }}
+    app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
 spec:
   replicas: {{ .Values.backend.replicaCount }}
   selector:
     matchLabels:
-      {{- include "notes-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "notes-app.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
       app: backend
   template:
     metadata:
       labels:
-        {{- include "notes-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "notes-app.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         app: backend
     spec:
       containers:
         - name: backend
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
           ports:
             - containerPort: 8000
@@ -64,7 +72,13 @@ kind: Service
 metadata:
   name: {{ include "notes-app.fullname" . }}-backend-svc
   labels:
-    {{- include "notes-app.labels" . | nindent 4 }}
+    helm.sh/chart: {{ include "notes-app.chart" . | quote }}
+    app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
 spec:
   type: {{ .Values.backend.service.type }}
   ports:
@@ -73,5 +87,6 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "notes-app.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "notes-app.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app: backend

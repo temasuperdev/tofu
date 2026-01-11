@@ -7,8 +7,9 @@ global:
 # Настройки фронтенда
 frontend:
   replicaCount: 2
+  repositoryOwner: ""
   image:
-    repository: ghcr.io/{{ .Values.global.repositoryOwner }}/notes-frontend
+    repository: "ghcr.io/your-username/notes-frontend"
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
@@ -36,7 +37,7 @@ frontend:
 backend:
   replicaCount: 2
   image:
-    repository: ghcr.io/{{ .Values.global.repositoryOwner }}/notes-backend
+    repository: "ghcr.io/your-username/notes-backend"
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
@@ -80,7 +81,7 @@ logging:
 
 # Зависимости
 ingress-nginx:
-  enabled: true
+  enabled: false
   controller:
     service:
       type: LoadBalancer
@@ -91,9 +92,9 @@ ingress-nginx:
       force-ssl-redirect: true
 
 cert-manager:
-  enabled: true
+  enabled: false
   installCRDs: true
   clusterIssuer:
     name: letsencrypt-prod
-    email: "admin@temasuug.ru"  # Укажите ваш email для Let's Encrypt
+    email: "admin@temasuug.ru" # Укажите ваш email для Let's Encrypt
     server: "https://acme-v02.api.letsencrypt.org/directory"

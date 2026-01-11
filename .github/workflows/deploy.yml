@@ -42,11 +42,13 @@ jobs:
         helm repo add jetstack https://charts.jetstack.io
         helm repo update
 
-    - name: Configure kubectl
+    - name: Install k3s
       run: |
-        mkdir -p ~/.kube
-        echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > ~/.kube/config
-        chmod 600 ~/.kube/config
+        curl -sfL https://get.k3s.io | sh -
+        sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+        sudo chown $USER:$USER ~/.kube/config
+        export KUBECONFIG=~/.kube/config
+        sleep 30  # ждем запуска k3s
         kubectl cluster-info
         kubectl get nodes
 

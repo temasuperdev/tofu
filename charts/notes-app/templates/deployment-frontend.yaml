@@ -3,22 +3,30 @@ kind: Deployment
 metadata:
   name: {{ include "notes-app.fullname" . }}-frontend
   labels:
-    {{- include "notes-app.labels" . | nindent 4 }}
+    helm.sh/chart: {{ include "notes-app.chart" . | quote }}
+    app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
 spec:
   replicas: {{ .Values.frontend.replicaCount }}
   selector:
     matchLabels:
-      {{- include "notes-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "notes-app.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
       app: frontend
   template:
     metadata:
       labels:
-        {{- include "notes-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "notes-app.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         app: frontend
     spec:
       containers:
         - name: frontend
-          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
           ports:
             - containerPort: 80
@@ -48,7 +56,13 @@ kind: Service
 metadata:
   name: {{ include "notes-app.fullname" . }}-frontend-svc
   labels:
-    {{- include "notes-app.labels" . | nindent 4 }}
+    helm.sh/chart: {{ include "notes-app.chart" . | quote }}
+    app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    {{- if .Chart.AppVersion }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    {{- end }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
 spec:
   type: {{ .Values.frontend.service.type }}
   ports:
@@ -57,5 +71,6 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "notes-app.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "notes-app.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app: frontend
