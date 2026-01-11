@@ -20,7 +20,7 @@ def create_note(db: Session, note: NoteCreate, user_id: int):
         user_id=user_id,
         category_id=getattr(note, 'category_id', None),  # Используем category_id, если доступен
         is_public=note.is_public,
-        category_name=note.category,  # Сохраняем как строку
+        category_name=getattr(note, 'category', None),  # Сохраняем как строку
         tags=tags_str
     )
     db.add(db_note)
@@ -34,8 +34,12 @@ def update_note(db: Session, note_id: int, note: NoteUpdate):
         return None
         
     # Обновляем поля, исключая те, которые не должны быть обновлены
-    for field, value in note.dict(exclude_unset=True).items():
-        if hasattr(db_note, field):
+    for field, value in note.model_dump(exclude_unset=True).items():
+        if field == 'tags':
+            # Преобразуем теги в строку для совместимости с SQLite
+            tags_str = ','.join(value) if value else ''
+            setattr(db_note, field, tags_str)
+        elif hasattr(db_note, field):
             setattr(db_note, field, value)
     
     db.commit()

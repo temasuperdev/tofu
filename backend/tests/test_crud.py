@@ -26,13 +26,13 @@ def test_create_and_get_user(db_session):
 
 def test_duplicate_username_fails(db_session, test_user):
     """Test that creating a user with duplicate username fails."""
-    with pytest.raises(IntegrityError):
+    with pytest.raises(ValueError):
         create_user(db_session, username=test_user.username, email="different@example.com", password="pass123")
 
 
 def test_duplicate_email_fails(db_session, test_user):
     """Test that creating a user with duplicate email fails."""
-    with pytest.raises(IntegrityError):
+    with pytest.raises(ValueError):
         create_user(db_session, username="different_username", email=test_user.email, password="pass123")
 
 

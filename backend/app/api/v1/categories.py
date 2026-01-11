@@ -6,7 +6,7 @@ from app.schemas.category import Category, CategoryCreate, CategoryUpdate
 from app.security.auth import get_current_user
 from app.models.user import User as UserModel
 
-router = APIRouter(prefix="/categories", tags=["categories"])
+router = APIRouter(tags=["categories"])
 
 @router.get("/", response_model=list[Category])
 def read_categories(

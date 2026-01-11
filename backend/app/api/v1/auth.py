@@ -9,7 +9,7 @@ from app.security.password import get_password_hash
 from app.crud.user import create_user, get_user_by_username
 from app.config import settings
 
-router = APIRouter()
+router = APIRouter(tags=["auth"])
 
 @router.post("/login", response_model=dict)
 def login(login_request: LoginRequest, db: Session = Depends(get_db)):

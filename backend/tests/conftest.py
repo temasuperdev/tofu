@@ -24,11 +24,12 @@ def tables(engine):
     Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def db_session(engine, tables):
     Session = sessionmaker(bind=engine)
     session = Session()
     yield session
+    session.rollback()
     session.close()
 
 

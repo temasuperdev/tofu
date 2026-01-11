@@ -6,7 +6,7 @@ from app.schemas.note import Note, NoteCreate, NoteUpdate
 from app.security.auth import get_current_user
 from app.models.user import User as UserModel
 
-router = APIRouter(prefix="/notes", tags=["notes"])
+router = APIRouter(tags=["notes"])
 
 @router.get("/", response_model=list[Note])
 def read_notes(

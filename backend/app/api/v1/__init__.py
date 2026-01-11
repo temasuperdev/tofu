@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.api.v1 import auth, users, notes, categories
 
-router = APIRouter(prefix="/api/v1")
+router = APIRouter()
 
 # Подключение маршрутов
 router.include_router(auth.router, prefix="/auth", tags=["auth"])

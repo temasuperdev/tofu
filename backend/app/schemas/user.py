@@ -38,7 +38,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     is_active: bool
     
     class Config:
