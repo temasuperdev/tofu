@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "notes-app.fullname" . }}-frontend
- labels:
+  labels:
     {{- include "notes-app.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.frontend.replicaCount }}
@@ -26,6 +26,8 @@ spec:
           env:
             - name: VUE_APP_API_BASE_URL
               value: "https://{{ .Values.global.domain }}/api/v1"
+            - name: VUE_APP_WEBSOCKET_URL
+              value: "wss://{{ .Values.global.domain }}/ws"
           livenessProbe:
             httpGet:
               path: /

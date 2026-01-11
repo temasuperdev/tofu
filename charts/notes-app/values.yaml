@@ -2,13 +2,14 @@
 global:
   domain: "serv.temasuug.ru"
   namespace: "notes-app"
+  repositoryOwner: ""
 
 # Настройки фронтенда
 frontend:
   replicaCount: 2
   image:
-    repository: localhost:5000/notes-frontend
-    pullPolicy: Always
+    repository: ghcr.io/{{ .Values.global.repositoryOwner }}/notes-frontend
+    pullPolicy: IfNotPresent
     tag: "latest"
   service:
     type: ClusterIP
@@ -19,6 +20,8 @@ frontend:
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "8m"
     hosts:
       - host: "serv.temasuug.ru"
         paths:
@@ -33,17 +36,20 @@ frontend:
 backend:
   replicaCount: 2
   image:
-    repository: localhost:5000/notes-backend
-    pullPolicy: Always
+    repository: ghcr.io/{{ .Values.global.repositoryOwner }}/notes-backend
+    pullPolicy: IfNotPresent
     tag: "latest"
   service:
     type: ClusterIP
     port: 8000
- env:
+  env:
     DATABASE_URL: "postgresql://postgres:password@notes-postgresql:5432/notesdb"
     SECRET_KEY: "your-secret-key-here"
     ALGORITHM: "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    SERVER_HOST: "0.0.0.0"
+    SERVER_PORT: "8000"
+    BACKEND_CORS_ORIGINS: "https://serv.temasuug.ru"
 
 # Настройки PostgreSQL
 postgresql:
@@ -71,3 +77,23 @@ logging:
     enabled: true
   fluentd:
     enabled: true
+
+# Зависимости
+ingress-nginx:
+  enabled: true
+  controller:
+    service:
+      type: LoadBalancer
+      annotations:
+        metallb.universe.tf/loadBalancer-ip: "172.31.255.200"  # Укажите IP-адрес из пула MetalLB
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+
+cert-manager:
+  enabled: true
+  installCRDs: true
+  clusterIssuer:
+    name: letsencrypt-prod
+    email: "admin@temasuug.ru"  # Укажите ваш email для Let's Encrypt
+    server: "https://acme-v02.api.letsencrypt.org/directory"

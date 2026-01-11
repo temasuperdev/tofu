@@ -44,6 +44,7 @@ jobs:
           --set frontend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-frontend \
           --set frontend.image.tag=${{ github.event.inputs.frontend_image_tag }} \
           --set frontend.image.pullPolicy=IfNotPresent \
+          --set global.repositoryOwner=${{ github.repository_owner }} \
           -f ./charts/notes-app/values.yaml \
           --timeout 10m
 

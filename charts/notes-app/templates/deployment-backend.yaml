@@ -38,6 +38,12 @@ spec:
               value: "HS256"
             - name: ACCESS_TOKEN_EXPIRE_MINUTES
               value: "30"
+            - name: BACKEND_CORS_ORIGINS
+              value: "https://{{ .Values.global.domain }}"
+            - name: SERVER_HOST
+              value: "0.0.0.0"
+            - name: SERVER_PORT
+              value: "8000"
           livenessProbe:
             httpGet:
               path: /health
@@ -63,7 +69,7 @@ spec:
   type: {{ .Values.backend.service.type }}
   ports:
     - port: {{ .Values.backend.service.port }}
-      targetPort: 800
+      targetPort: 8000
       protocol: TCP
       name: http
   selector:
