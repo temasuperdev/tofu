@@ -58,6 +58,7 @@ jobs:
     - name: Update Helm release
       run: |
         helm dependency update ./charts/notes-app
+        helm uninstall notes-app || true
         helm upgrade --install notes-app ./charts/notes-app \
           --set backend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-backend \
           --set backend.image.tag=${{ github.event.inputs.backend_image_tag }} \
@@ -66,17 +67,18 @@ jobs:
           --set frontend.image.tag=${{ github.event.inputs.frontend_image_tag }} \
           --set frontend.image.pullPolicy=IfNotPresent \
           --set global.repositoryOwner=${{ github.repository_owner }} \
+          --namespace note --create-namespace \
           -f ./charts/notes-app/values.yaml \
           --timeout 10m
 
     - name: Verify deployment
       run: |
-        kubectl rollout status deployment/notes-app-backend --timeout=5m
-        kubectl rollout status deployment/notes-app-frontend --timeout=5m
+        kubectl rollout status deployment/notes-app-backend --timeout=5m -n note
+        kubectl rollout status deployment/notes-app-frontend --timeout=5m -n note
 
     - name: Run health checks
       run: |
         # Ждем пока ingress будет готов
-        kubectl wait --for=condition=ready ingress/notes-app-ingress --timeout=300s
+        kubectl wait --for=condition=ready ingress/notes-app-ingress -n note --timeout=300s
         # Проверяем доступность сайта
         curl -f https://serv.temasuug.ru/health || exit 1
