@@ -2,14 +2,14 @@
 global:
   domain: "serv.temasuug.ru"
   namespace: "notes-app"
-  repositoryOwner: ""
+  repositoryOwner: "your-username"
 
 # Настройки фронтенда
 frontend:
   replicaCount: 2
   repositoryOwner: ""
   image:
-    repository: "ghcr.io/your-username/notes-frontend"
+    repository: "ghcr.io/{{ .Values.global.repositoryOwner }}/notes-frontend"
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
@@ -37,7 +37,7 @@ frontend:
 backend:
   replicaCount: 2
   image:
-    repository: "ghcr.io/your-username/notes-backend"
+    repository: "ghcr.io/{{ .Values.global.repositoryOwner }}/notes-backend"
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
