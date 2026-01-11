@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
+import uuid
 
 from app.database import Base, get_db
 from app.main import app
@@ -42,10 +43,12 @@ def client(db_session):
 
 @pytest.fixture
 def test_user(db_session):
+    # Генерируем уникальные значения для каждого теста
+    unique_id = str(uuid.uuid4())
     # Создаем пользователя без хэширования пароля, чтобы избежать проблем с bcrypt
     user_data = {
-        "username": "testuser_main",
-        "email": "test_main@example.com",
+        "username": f"testuser_{unique_id[:8]}",
+        "email": f"test_{unique_id[:8]}@example.com",
         "password_hash": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"  # Хардкод хэша для 'password'
     }
     user = User(**user_data)
