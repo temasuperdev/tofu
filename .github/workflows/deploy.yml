@@ -1,0 +1,56 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_image_tag:
+        description: 'Backend image tag to deploy'
+        required: true
+        default: 'latest'
+      frontend_image_tag:
+        description: 'Frontend image tag to deploy'
+        required: true
+        default: 'latest'
+
+env:
+  REGISTRY: localhost:5000
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > ~/.kube/config
+
+    - name: Update Helm release
+      run: |
+        helm upgrade --install notes-app ./charts/notes-app \
+          --set backend.image.repository=${{ env.REGISTRY }}/notes-backend \
+          --set backend.image.tag=${{ github.event.inputs.backend_image_tag }} \
+          --set frontend.image.repository=${{ env.REGISTRY }}/notes-frontend \
+          --set frontend.image.tag=${{ github.event.inputs.frontend_image_tag }} \
+          -f values.yaml \
+          --timeout 10m
+
+    - name: Verify deployment
+      run: |
+        kubectl rollout status deployment/notes-app-backend --timeout=5m
+        kubectl rollout status deployment/notes-app-frontend --timeout=5m
+
+    - name: Run health checks
+      run: |
+        # Ждем пока ingress будет готов
+        kubectl wait --for=condition=ready ingress/notes-app-ingress --timeout=300s
+        # Проверяем доступность сайта
+        curl -f https://serv.temasuug.ru/health || exit 1

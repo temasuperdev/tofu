@@ -1,0 +1,18 @@
+Notes App успешно установлен!
+
+Доступ к приложению:
+- Frontend: https://{{ .Values.global.domain }}
+- API: https://{{ .Values.global.domain }}/api/v1
+
+Проверка состояния:
+- Проверить статус подов: kubectl get pods -n {{ .Release.Namespace }}
+- Проверить статус сервисов: kubectl get svc -n {{ .Release.Namespace }}
+- Проверить статус ingress: kubectl get ingress -n {{ .Release.Namespace }}
+
+Для доступа к Grafana (если включен мониторинг):
+- kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "notes-app.fullname" . }}-grafana 300:80
+- Затем откройте http://localhost:3000
+
+Для доступа к Kibana (если включен логинг):
+- kubectl port-forward -n {{ .Release.Namespace }} svc/kibana-svc 5601:5601
+- Затем откройте http://localhost:5601

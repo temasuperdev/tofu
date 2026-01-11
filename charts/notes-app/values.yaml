@@ -1,0 +1,73 @@
+# Общие настройки
+global:
+  domain: "serv.temasuug.ru"
+  namespace: "notes-app"
+
+# Настройки фронтенда
+frontend:
+  replicaCount: 2
+  image:
+    repository: localhost:5000/notes-frontend
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: "serv.temasuug.ru"
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: notes-tls-cert
+        hosts:
+          - serv.temasuug.ru
+
+# Настройки бэкенда
+backend:
+  replicaCount: 2
+  image:
+    repository: localhost:5000/notes-backend
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+ env:
+    DATABASE_URL: "postgresql://postgres:password@notes-postgresql:5432/notesdb"
+    SECRET_KEY: "your-secret-key-here"
+    ALGORITHM: "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: 30
+
+# Настройки PostgreSQL
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "strong-password"
+    database: "notesdb"
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "local-path"
+
+# Настройки мониторинга
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+
+# Настройки логирования
+logging:
+  enabled: true
+  elasticsearch:
+    enabled: true
+  fluentd:
+    enabled: true
