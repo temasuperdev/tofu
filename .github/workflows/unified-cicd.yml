@@ -160,9 +160,13 @@ jobs:
       run: |
         mkdir -p ~/.kube
         echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        kubectl cluster-info
+        kubectl get nodes
 
     - name: Update Helm release
       run: |
+        helm dependency update ./charts/notes-app
         helm upgrade --install notes-app ./charts/notes-app \
           --set backend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-backend \
           --set backend.image.tag=${{ github.sha }} \
@@ -171,7 +175,8 @@ jobs:
           --set frontend.image.tag=${{ github.sha }} \
           --set frontend.image.pullPolicy=IfNotPresent \
           --set global.repositoryOwner=${{ github.repository_owner }} \
-          -f ./charts/notes-app/values.yaml
+          -f ./charts/notes-app/values.yaml \
+          --timeout 10m
 
     - name: Verify deployment
       run: |

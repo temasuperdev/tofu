@@ -45,10 +45,8 @@ jobs:
     - name: Install k3s
       run: |
         curl -sfL https://get.k3s.io | sh -
-        sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-        sudo chown $USER:$USER ~/.kube/config
-        export KUBECONFIG=~/.kube/config
-        sleep 30  # ждем запуска k3s
+        export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+        sudo chmod 644 /etc/rancher/k3s/k3s.yaml
         kubectl cluster-info
         kubectl get nodes
 
