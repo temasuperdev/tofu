@@ -15,8 +15,29 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(User).offset(skip).limit(limit).all()
 
 def create_user(db: Session, username: str, email: str, password: str):
-    db_user = User(username=username, email=email, password_hash=password)
+    from app.security.password import get_password_hash
+    # Усекаем пароль до 72 символов, чтобы избежать ошибки bcrypt
+    if len(password) > 72:
+        password = password[:72]
+    password_hash = get_password_hash(password)
+    db_user = User(username=username, email=email, password_hash=password_hash)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    return db_user
+
+def update_user(db: Session, user_id: int, **kwargs):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if db_user:
+        for key, value in kwargs.items():
+            setattr(db_user, key, value)
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
+def delete_user(db: Session, user_id: int):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if db_user:
+        db.delete(db_user)
+        db.commit()
     return db_user

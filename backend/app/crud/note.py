@@ -12,7 +12,16 @@ def get_notes(db: Session, skip: int = 0, limit: int = 100, user_id: int = None)
     return query.offset(skip).limit(limit).all()
 
 def create_note(db: Session, note: NoteCreate, user_id: int):
-    db_note = Note(**note.dict(), user_id=user_id)
+    # Преобразуем теги в строку для совместимости с SQLite
+    tags_str = ','.join(note.tags) if note.tags else ''
+    db_note = Note(
+        title=note.title,
+        content=note.content,
+        user_id=user_id,
+        is_public=note.is_public,
+        category_name=note.category,  # Сохраняем как строку
+        tags=tags_str
+    )
     db.add(db_note)
     db.commit()
     db.refresh(db_note)

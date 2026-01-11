@@ -14,3 +14,4 @@ class Category(Base):
     
     # Связи
     owner = relationship("User", back_populates="categories")
+    notes = relationship("Note", back_populates="category_rel")

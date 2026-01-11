@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -14,4 +15,6 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     
     # Связи
-    notes = relationship("Note", back_populates="owner")
+    notes = relationship("Note", back_populates="owner", cascade="all, delete-orphan")
+    categories = relationship("Category", back_populates="owner", cascade="all, delete-orphan")
+    note_shares = relationship("NoteShare", back_populates="shared_with_user")

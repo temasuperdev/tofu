@@ -46,7 +46,7 @@ def register(register_request: RegisterRequest, db: Session = Depends(get_db)):
         db=db,
         username=register_request.username,
         email=register_request.email,
-        password=hashed_password
+        password=register_request.password
     )
     
     return user

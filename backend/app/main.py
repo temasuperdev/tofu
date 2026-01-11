@@ -1,13 +1,10 @@
 from fastapi import FastAPI
 from app.api.v1 import router as api_v1_router
-from app.database import engine, Base
+from app.database import Base, init_db_engine
 import uvicorn
 from app.metrics import MetricsMiddleware
 from starlette.responses import Response
 from prometheus_client import generate_latest
-
-# Создание таблиц в БД
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Notes API",
@@ -20,6 +17,11 @@ app.add_middleware(MetricsMiddleware)
 
 # Подключение маршрутов
 app.include_router(api_v1_router, prefix="/api/v1")
+
+@app.on_event("startup")
+def startup_event():
+    # Инициализация подключения к БД при запуске приложения
+    init_db_engine()
 
 @app.get("/")
 def read_root():
