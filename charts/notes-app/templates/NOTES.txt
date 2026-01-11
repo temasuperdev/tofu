@@ -16,3 +16,14 @@ Notes App успешно установлен!
 Для доступа к Kibana (если включен логинг):
 - kubectl port-forward -n {{ .Release.Namespace }} svc/kibana-svc 5601:5601
 - Затем откройте http://localhost:5601
+
+Устранение неполадок:
+- Если возникает ошибка при обновлении StatefulSet PostgreSQL ("UPGRADE FAILED: cannot patch"), используйте безопасный скрипт обновления:
+  ./scripts/helm-upgrade-safe.sh <release-name> charts/notes-app <namespace>
+
+- При необходимости ручного удаления StatefulSet PostgreSQL (только если данные не важны или сделана резервная копия):
+  kubectl delete statefulset <release-name>-postgresql -n <namespace> --cascade=false
+  Затем повторите команду helm upgrade
+
+- Для проверки текущего состояния StatefulSet:
+  kubectl describe statefulset <release-name>-postgresql -n <namespace>

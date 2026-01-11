@@ -58,7 +58,7 @@ postgresql:
   image:
     registry: docker.io
     repository: bitnami/postgresql
-    tag: "15.6.0-debian-12-r2"  # Используем доступный тег вместо несуществующего 16.2.0-debian-12-r5
+    tag: "18.1.11"
   auth:
     postgresPassword: "strong-password"
     database: "notesdb"
@@ -67,6 +67,21 @@ postgresql:
       enabled: true
       size: 10Gi
       storageClass: "local-path"
+    # Добавляем параметры, которые помогут избежать конфликта при обновлении
+    configuration: |
+      max_connections = 300
+      shared_buffers = 128MB
+    extendedConfiguration: |
+      log_min_messages = WARNING
+    initdb:
+      scriptsConfigMap: null
+    updateStrategy:
+      type: RollingUpdate
+  architecture: standalone
+  auth:
+    enablePostgresUser: true
+    postgresPassword: "strong-password"
+    database: "notesdb"
 
 # Настройки мониторинга
 monitoring:
