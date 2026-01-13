@@ -13,9 +13,13 @@ fi
 
 echo "Выполняем безопасное обновление Helm релиза: $RELEASE_NAME в namespace: $NAMESPACE"
 
-# Проверяем, существует ли релиз
+# Обновляем зависимости чарта
+echo "Обновляем зависимости Helm чарта"
+helm dependency update "$CHART_PATH"
+
+# Проверяем, существует ли релиз в целевом namespace
 if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
-    echo "Релиз $RELEASE_NAME существует, проверяем состояние PostgreSQL StatefulSet"
+    echo "Релиз $RELEASE_NAME существует в namespace $NAMESPACE, проверяем состояние PostgreSQL StatefulSet"
 
     # Удаляем старые секреты, которые могут вызвать конфликты с метаданными владельца
     echo "Удаляем старые секреты, связанные с релизом $RELEASE_NAME в namespace $NAMESPACE"
@@ -54,7 +58,20 @@ if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
         helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --install --atomic=true --timeout=10m
     fi
 else
-    # Первая установка
+    # Проверяем, существует ли релиз в другом namespace (например, default)
+    DEFAULT_NAMESPACE="default"
+    if [ "$NAMESPACE" != "$DEFAULT_NAMESPACE" ] && helm status "$RELEASE_NAME" -n "$DEFAULT_NAMESPACE" >/dev/null 2>&1; then
+        echo "Релиз $RELEASE_NAME найден в namespace $DEFAULT_NAMESPACE, удаляем его перед установкой в $NAMESPACE"
+        
+        # Удаляем релиз из старого namespace
+        helm uninstall "$RELEASE_NAME" -n "$DEFAULT_NAMESPACE"
+        
+        # Удаляем связанные ресурсы, которые могли остаться
+        kubectl delete secret -n "$DEFAULT_NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" --field-selector type=Opaque --ignore-not-found=true
+        kubectl delete pvc -n "$DEFAULT_NAMESPACE" -l "app.kubernetes.io/name=postgresql,release=$RELEASE_NAME" --ignore-not-found=true
+    fi
+
+    # Первая установка в целевой namespace
     echo "Выполняем новую установку Helm релиза: $RELEASE_NAME в namespace: $NAMESPACE"
     helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --install --atomic=true --timeout=10m
 fi

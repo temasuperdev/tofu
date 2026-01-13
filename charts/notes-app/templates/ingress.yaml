@@ -3,10 +3,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "notes-app.fullname" . }}-ingress
+  namespace: {{ .Values.global.namespace }}
   annotations:
     {{- range $key, $value := .Values.frontend.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
+    "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
   ingressClassName: {{ .Values.frontend.ingress.className }}
   tls:
