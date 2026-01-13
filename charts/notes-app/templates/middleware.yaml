@@ -8,19 +8,4 @@ spec:
   redirectScheme:
     scheme: https
     permanent: true
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: security-headers
-  namespace: {{ .Values.global.namespace }}
-spec:
-  headers:
-    sslRedirect: true
-    stsIncludeSubdomains: true
-    stsPreload: true
-    stsSeconds: 31536000
-    browserXssFilter: true
-    contentTypeNosniff: true
-    frameDeny: true
 {{- end }}

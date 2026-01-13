@@ -22,18 +22,15 @@ frontend:
      cert-manager.io/cluster-issuer: letsencrypt-prod
      traefik.ingress.kubernetes.io/router.entrypoints: websecure
      traefik.ingress.kubernetes.io/router.tls: "true"
-     traefik.ingress.kubernetes.io/router.tls.options: default@file
      traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
-     traefik.ingress.kubernetes.io/router.priority: "100"
      # Security headers
-     traefik.ingress.kubernetes.io/router.additional-routes: ""
+     traefik.ingress.kubernetes.io/router.priority: "100"
      # HSTS header
-     traefik.ingress.kubernetes.io/router.headers.customresponseheaders: |
-       Strict-Transport-Security: max-age=31536000;includeSubDomains;preload
-       X-Frame-Options: DENY
-       X-Content-Type-Options: nosniff
-       Referrer-Policy: strict-origin-when-cross-origin
-       X-XSS-Protection: 1; mode=block
+     traefik.ingress.kubernetes.io/router.responseheaders.Strict-Transport-Security: "max-age=31536000;includeSubDomains;preload"
+     traefik.ingress.kubernetes.io/router.responseheaders.X-Frame-Options: "DENY"
+     traefik.ingress.kubernetes.io/router.responseheaders.X-Content-Type-Options: "nosniff"
+     traefik.ingress.kubernetes.io/router.responseheaders.Referrer-Policy: "strict-origin-when-cross-origin"
+     traefik.ingress.kubernetes.io/router.responseheaders.X-XSS-Protection: "1; mode=block"
    hosts:
      - host: "serv.temasuug.ru"
        paths:
@@ -113,8 +110,8 @@ logging:
 # Зависимости
 
 traefik:
-  middlewareEnabled: true
-  tlsStoreEnabled: true
+  middlewareEnabled: false
+  tlsStoreEnabled: false
   tlsOptions:
     name: default
     cipherSuites:

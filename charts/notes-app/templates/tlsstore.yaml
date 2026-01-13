@@ -2,37 +2,10 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: TLSStore
 metadata:
-  name: default
-  namespace: {{ .Values.global.namespace }}
+ name: default
+ namespace: {{ .Values.global.namespace }}
 spec:
   defaultCertificate:
     secretName: notes-tls-cert
----
-{{- if .Values.traefik.tlsOptions }}
-apiVersion: traefik.containo.us/v1alpha1
-kind: TLSOption
-metadata:
-  name: {{ .Values.traefik.tlsOptions.name }}
-  namespace: {{ .Values.global.namespace }}
-spec:
-  {{- if .Values.traefik.tlsOptions.minVersion }}
-  minVersion: {{ .Values.traefik.tlsOptions.minVersion }}
-  {{- end }}
-  {{- if .Values.traefik.tlsOptions.maxVersion }}
-  maxVersion: {{ .Values.traefik.tlsOptions.maxVersion }}
-  {{- end }}
-  {{- if .Values.traefik.tlsOptions.cipherSuites }}
-  cipherSuites:
-    {{- range .Values.traefik.tlsOptions.cipherSuites }}
-    - {{ . }}
-    {{- end }}
-  {{- end }}
-  {{- if .Values.traefik.tlsOptions.curvePreferences }}
-  curvePreferences:
-    {{- range .Values.traefik.tlsOptions.curvePreferences }}
-    - {{ . }}
-    {{- end }}
-  {{- end }}
-  sniStrict: true
 {{- end }}
 {{- end }}
