@@ -113,7 +113,7 @@ ingress-nginx:
 
 cert-manager:
   enabled: true
-  installCRDs: true
+  installCRDs: false
   clusterIssuer:
     name: letsencrypt-prod
     email: "admin@temasuug.ru" # Укажите ваш email для Let's Encrypt
