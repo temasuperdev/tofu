@@ -2,11 +2,11 @@ apiVersion: v2
 name: notes-app
 description: Микросервисное приложение для управления заметками
 type: application
-version: 1.0.0
+version: 1.0.1
 appVersion: "1.0"
 dependencies:
  - name: postgresql
-   version: 14.2
+   version: 14.2.4
    repository: https://charts.bitnami.com/bitnami
    condition: postgresql.enabled
  - name: ingress-nginx

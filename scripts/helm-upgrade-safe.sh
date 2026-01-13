@@ -17,6 +17,10 @@ echo "Выполняем безопасное обновление Helm рели
 if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
     echo "Релиз $RELEASE_NAME существует, проверяем состояние PostgreSQL StatefulSet"
 
+    # Удаляем старые секреты, которые могут вызвать конфликты с метаданными владельца
+    echo "Удаляем старые секреты, связанные с релизом $RELEASE_NAME в namespace $NAMESPACE"
+    kubectl delete secret -n "$NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" --field-selector type=Opaque --ignore-not-found=true
+
     # Получаем информацию о StatefulSet PostgreSQL
     POSTGRES_STS=$(kubectl get statefulsets -l app.kubernetes.io/name=postgresql -n "$NAMESPACE" -o json 2>/dev/null)
     
@@ -42,8 +46,6 @@ if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
         else
             # Обычное обновление
             echo "Конфликтов не обнаружено, выполняем стандартное обновление"
-            # Удаляем старые секреты, если они вызывают конфликты с метаданными
-            kubectl delete secret $(kubectl get secrets -n "$NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" -o jsonpath='{.items[?(@.type=="Opaque")].metadata.name}' 2>/dev/null) --ignore-not-found=true
             helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --install --atomic=true --timeout=10m
         fi
     else
