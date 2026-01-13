@@ -11,7 +11,7 @@ if [ -z "$RELEASE_NAME" ] || [ -z "$CHART_PATH" ]; then
     exit 1
 fi
 
-echo "Выполняем безопасное обновление Helm релиза: $RELEASE_NAME"
+echo "Выполняем безопасное обновление Helm релиза: $RELEASE_NAME в namespace: $NAMESPACE"
 
 # Проверяем, существует ли релиз
 if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
@@ -42,6 +42,8 @@ if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
         else
             # Обычное обновление
             echo "Конфликтов не обнаружено, выполняем стандартное обновление"
+            # Удаляем старые секреты, если они вызывают конфликты с метаданными
+            kubectl delete secret $(kubectl get secrets -n "$NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" -o jsonpath='{.items[?(@.type=="Opaque")].metadata.name}' 2>/dev/null) --ignore-not-found=true
             helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --install --atomic=true --timeout=10m
         fi
     else
@@ -51,7 +53,7 @@ if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
     fi
 else
     # Первая установка
-    echo "Выполняем новую установку Helm релиза: $RELEASE_NAME"
+    echo "Выполняем новую установку Helm релиза: $RELEASE_NAME в namespace: $NAMESPACE"
     helm upgrade "$RELEASE_NAME" "$CHART_PATH" --namespace "$NAMESPACE" --install --atomic=true --timeout=10m
 fi
 
