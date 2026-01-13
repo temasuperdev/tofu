@@ -58,6 +58,8 @@ jobs:
     - name: Update Helm release
       run: |
         helm dependency update ./charts/notes-app
+        # Удаляем проблемные NetworkPolicy перед обновлением
+        kubectl delete networkpolicy frontend-netpol backend-netpol postgresql-netpol --namespace note --ignore-not-found=true
         kubectl delete secret notes-app-db-secret notes-app-app-secret --namespace note || true
         kubectl delete secret notes-app-postgresql --namespace note || true
         helm uninstall notes-app --namespace note || true
