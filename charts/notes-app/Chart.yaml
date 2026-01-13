@@ -9,7 +9,6 @@ dependencies:
    version: 14.2.4
    repository: https://charts.bitnami.com/bitnami
    condition: postgresql.enabled
- - name: ingress-nginx
  - name: cert-manager
    version: v1.13.0
    repository: https://charts.jetstack.io

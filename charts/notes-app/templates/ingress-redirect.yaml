@@ -6,13 +6,11 @@ metadata:
   name: {{ include "notes-app.fullname" . }}-ingress-http
   namespace: {{ .Values.global.namespace }}
   annotations:
-    {{- range $key, $value := .Values.frontend.ingress.annotations }}
-    {{ $key }}: {{ $value | quote }}
-    {{- end }}
-    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
-    "meta.helm.sh/release-name": "{{ .Release.Name }}"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.global.namespace }}-redirectscheme@kubernetescrd
+    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
+    "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
   ingressClassName: {{ .Values.frontend.ingress.className }}
   rules:

@@ -52,7 +52,7 @@ spec:
               app: frontend
         - namespaceSelector:
             matchLabels:
-              name: ingress-nginx
+              name: traefik
       ports:
         - protocol: TCP
           port: 800
