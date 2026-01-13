@@ -15,14 +15,14 @@ frontend:
  service:
    type: ClusterIP
    port: 80
- ingress:
-   enabled: true
-   className: "nginx"
-   annotations:
-     cert-manager.io/cluster-issuer: letsencrypt-prod
-     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  ingress:
+    enabled: true
+    className: "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
    hosts:
      - host: "serv.temasuug.ru"
        paths:
@@ -100,16 +100,6 @@ logging:
     enabled: true
 
 # Зависимости
-ingress-nginx:
-  enabled: true
-  controller:
-    service:
-      type: LoadBalancer
-      annotations:
-        metallb.universe.tf/loadBalancer-ip: "172.31.255.200"  # Укажите IP-адрес из пула MetalLB
-    config:
-      ssl-redirect: true
-      force-ssl-redirect: true
 
 cert-manager:
   enabled: true

@@ -1,0 +1,31 @@
+{{- if .Values.frontend.ingress.enabled -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "notes-app.fullname" . }}-ingress-http
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    {{- range $key, $value := .Values.frontend.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
+    "meta.helm.sh/release-name": "{{ .Release.Name }}"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.global.namespace }}-redirectscheme@kubernetescrd
+spec:
+  ingressClassName: {{ .Values.frontend.ingress.className }}
+  rules:
+    {{- range .Values.frontend.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "notes-app.fullname" $ }}-frontend-svc
+                port:
+                  number: {{ $.Values.frontend.service.port }}
+    {{- end }}
+{{- end }}
