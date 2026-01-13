@@ -101,7 +101,7 @@ logging:
 
 # Зависимости
 ingress-nginx:
-  enabled: false
+  enabled: true
   controller:
     service:
       type: LoadBalancer
@@ -112,7 +112,7 @@ ingress-nginx:
       force-ssl-redirect: true
 
 cert-manager:
-  enabled: false
+  enabled: true
   installCRDs: true
   clusterIssuer:
     name: letsencrypt-prod
