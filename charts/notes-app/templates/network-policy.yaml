@@ -4,7 +4,7 @@ metadata:
   name: frontend-netpol
   namespace: {{ .Values.global.namespace }}
   annotations:
-    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
+    "meta.helm.sh/release-namespace": "{{ .Release.Namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
   podSelector:
@@ -36,7 +36,7 @@ metadata:
   name: backend-netpol
   namespace: {{ .Values.global.namespace }}
   annotations:
-    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
+    "meta.helm.sh/release-namespace": "{{ .Release.Namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
   podSelector:
@@ -71,7 +71,7 @@ metadata:
   name: postgresql-netpol
   namespace: {{ .Values.global.namespace }}
   annotations:
-    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
+    "meta.helm.sh/release-namespace": "{{ .Release.Namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
   podSelector:

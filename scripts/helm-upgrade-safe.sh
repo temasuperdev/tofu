@@ -21,9 +21,10 @@ helm dependency update "$CHART_PATH"
 if helm status "$RELEASE_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
     echo "Релиз $RELEASE_NAME существует в namespace $NAMESPACE, проверяем состояние PostgreSQL StatefulSet"
 
-    # Удаляем старые секреты, которые могут вызвать конфликты с метаданными владельца
-    echo "Удаляем старые секреты, связанные с релизом $RELEASE_NAME в namespace $NAMESPACE"
+    # Удаляем старые ресурсы, которые могут вызвать конфликты с метаданными владельца
+    echo "Удаляем старые ресурсы, связанные с релизом $RELEASE_NAME в namespace $NAMESPACE"
     kubectl delete secret -n "$NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" --field-selector type=Opaque --ignore-not-found=true
+    kubectl delete networkpolicy -n "$NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" --ignore-not-found=true
 
     # Получаем информацию о StatefulSet PostgreSQL
     POSTGRES_STS=$(kubectl get statefulsets -l app.kubernetes.io/name=postgresql -n "$NAMESPACE" -o json 2>/dev/null)
@@ -68,6 +69,7 @@ else
         
         # Удаляем связанные ресурсы, которые могли остаться
         kubectl delete secret -n "$DEFAULT_NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" --field-selector type=Opaque --ignore-not-found=true
+        kubectl delete networkpolicy -n "$DEFAULT_NAMESPACE" -l "meta.helm.sh/release-name=$RELEASE_NAME" --ignore-not-found=true
         kubectl delete pvc -n "$DEFAULT_NAMESPACE" -l "app.kubernetes.io/name=postgresql,release=$RELEASE_NAME" --ignore-not-found=true
     fi
 
