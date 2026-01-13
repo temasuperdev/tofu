@@ -1,4 +1,4 @@
-{{- if .Values.frontend.ingress.enabled -}}
+{{- if and .Values.frontend.ingress.enabled (eq .Values.frontend.ingress.className "traefik") -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -8,7 +8,9 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     traefik.ingress.kubernetes.io/router.entrypoints: web
+    {{- if .Values.traefik.middlewareEnabled }}
     traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.global.namespace }}-redirectscheme@kubernetescrd
+    {{- end }}
     "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:

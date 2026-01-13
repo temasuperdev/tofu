@@ -22,7 +22,18 @@ frontend:
      cert-manager.io/cluster-issuer: letsencrypt-prod
      traefik.ingress.kubernetes.io/router.entrypoints: websecure
      traefik.ingress.kubernetes.io/router.tls: "true"
+     traefik.ingress.kubernetes.io/router.tls.options: default@file
      traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
+     traefik.ingress.kubernetes.io/router.priority: "100"
+     # Security headers
+     traefik.ingress.kubernetes.io/router.additional-routes: ""
+     # HSTS header
+     traefik.ingress.kubernetes.io/router.headers.customresponseheaders: |
+       Strict-Transport-Security: max-age=31536000;includeSubDomains;preload
+       X-Frame-Options: DENY
+       X-Content-Type-Options: nosniff
+       Referrer-Policy: strict-origin-when-cross-origin
+       X-XSS-Protection: 1; mode=block
    hosts:
      - host: "serv.temasuug.ru"
        paths:
@@ -100,6 +111,24 @@ logging:
     enabled: true
 
 # Зависимости
+
+traefik:
+  middlewareEnabled: true
+  tlsStoreEnabled: true
+  tlsOptions:
+    name: default
+    cipherSuites:
+      - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+      - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+      - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+      - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+      - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    minVersion: VersionTLS12
+    maxVersion: VersionTLS13
+    curvePreferences:
+      - CurveP521
+      - CurveP384
 
 cert-manager:
   enabled: true
