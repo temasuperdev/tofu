@@ -19,4 +19,3 @@ Error: UPGRADE FAILED: cannot patch "notes-app-postgresql" with kind StatefulSet
 ```bash
 helm upgrade <название-релиза> charts/notes-app --namespace <namespace> --atomic=false --force
 ```
-
