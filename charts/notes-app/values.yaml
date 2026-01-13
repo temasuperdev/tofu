@@ -58,7 +58,7 @@ postgresql:
  image:
    registry: docker.io
    repository: bitnami/postgresql
-   tag: "14.2"
+   tag: "latest"
  auth:
    postgresPassword: "strong-password"
    database: "notesdb"
