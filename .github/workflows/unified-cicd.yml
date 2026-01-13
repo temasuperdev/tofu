@@ -185,5 +185,5 @@ jobs:
 
     - name: Verify deployment
       run: |
-        kubectl rollout status deployment/notes-app-backend --timeout=5m
-        kubectl rollout status deployment/notes-app-frontend --timeout=5m
+        kubectl rollout status deployment/notes-app-backend --timeout=5m -n note
+        kubectl rollout status deployment/notes-app-frontend --timeout=5m -n note
