@@ -1,8 +1,8 @@
-{{- if and .Values.frontend.ingress.enabled .Values.traefik.middlewareEnabled -}}
+{{- if .Values.frontend.ingress.enabled }}
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: redirectscheme
+  name: {{ .Values.global.namespace }}-redirectscheme
   namespace: {{ .Values.global.namespace }}
 spec:
   redirectScheme:

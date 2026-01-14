@@ -6,5 +6,5 @@ metadata:
  namespace: {{ .Values.global.namespace }}
 spec:
   defaultCertificate:
-    secretName: notes-tls-cert
+    secretName: {{ .Values.frontend.ingress.tls.secretName }}
 {{- end }}
