@@ -36,8 +36,6 @@ spec:
             - containerPort: 80
               name: http
           env:
-            - name: BACKEND_SERVICE_HOST
-              value: "{{ include "notes-app.fullname" . }}-backend-svc"
             - name: VUE_APP_API_BASE_URL
               value: "https://{{ .Values.global.domain }}/api/v1"
             - name: VUE_APP_WEBSOCKET_URL
