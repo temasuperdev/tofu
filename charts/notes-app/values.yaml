@@ -29,6 +29,12 @@ frontend:
        paths:
          - path: /
            pathType: Prefix
+         - path: /api
+           pathType: Prefix
+         - path: /docs
+           pathType: Prefix
+         - path: /redoc
+           pathType: Prefix
    tls:
      - secretName: notes-tls-cert
        hosts:
