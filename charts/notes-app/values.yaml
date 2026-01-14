@@ -30,7 +30,7 @@ frontend:
          - path: /
            pathType: Prefix
    tls:
-     - secretName: {{ .Values.global.namespace }}-tls-cert
+     - secretName: notes-tls-cert
        hosts:
          - serv.temasuug.ru
 
@@ -116,9 +116,7 @@ traefik:
       - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
     minVersion: VersionTLS12
     maxVersion: VersionTLS13
-    curvePreferences:
-      - CurveP521
-      - CurveP384
+    sniStrict: true
 
 cert-manager:
   enabled: true

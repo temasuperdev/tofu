@@ -10,7 +10,7 @@ metadata:
     {{- end }}
     "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
-      "traefik.ingress.kubernetes.io/router.middlewares": "{{ .Values.global.namespace }}-security-headers@kubernetescrd,{{ .Values.global.namespace }}-redirectscheme@kubernetescrd"
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ .Values.global.namespace }}-security-headers@kubernetescrd,{{ .Values.global.namespace }}-redirectscheme@kubernetescrd"
 spec:
   ingressClassName: {{ .Values.frontend.ingress.className }}
   tls:
@@ -19,7 +19,7 @@ spec:
         {{- range .hosts }}
         - {{ . | quote }}
         {{- end }}
-      secretName: {{ .Values.global.namespace }}-tls-cert
+      secretName: {{ .secretName }}
     {{- end }}
   rules:
     {{- range .Values.frontend.ingress.hosts }}
