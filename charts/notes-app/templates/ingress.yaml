@@ -8,6 +8,7 @@ metadata:
     {{- range $key, $value := .Values.frontend.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    # Удаляем потенциально проблемные аннотации
     "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
