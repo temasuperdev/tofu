@@ -1,9 +1,9 @@
 dependencies:
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
-  version: 14.2.4
+  version: 18.2.0
 - name: cert-manager
   repository: https://charts.jetstack.io
   version: v1.13.0
-digest: sha256:f75cc47a6abec0b79a52395e528dcf695e8dd19ddd9e5062e335d2135dbabfbd
-generated: "2026-01-13T06:47:27.458276989Z"
+digest: sha256:7d58dec4ffa18e21074e57964207dcfe540aff119990bef2c9360df3b160aebf
+generated: "2026-01-15T13:05:04.55079865Z"

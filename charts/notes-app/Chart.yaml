@@ -6,7 +6,7 @@ version: 1.0.1
 appVersion: "1.0"
 dependencies:
  - name: postgresql
-   version: 14.2.4
+   version: 18.2.0
    repository: https://charts.bitnami.com/bitnami
    condition: postgresql.enabled
  - name: cert-manager

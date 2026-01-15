@@ -55,7 +55,7 @@ postgresql:
   image:
     registry: docker.io
     repository: bitnami/postgresql
-    tag: "15.5.0"
+    tag: "16.4.0-debian-12-r0"
   auth:
     postgresPassword: "strong-password"
     database: "notesdb"
@@ -74,8 +74,8 @@ postgresql:
       scriptsConfigMap: null
     updateStrategy:
       type: RollingUpdate
-    # Указываем политику хранения PVC, чтобы избежать конфликта при обновлении
     persistentVolumeClaimRetentionPolicy:
+      enabled: true
       whenDeleted: Retain
       whenScaled: Retain
   architecture: standalone
