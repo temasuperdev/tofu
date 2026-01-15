@@ -3,6 +3,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: cert-manager-ready-check
+  namespace: {{ .Release.Namespace | default .Values.global.namespace }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-5"
@@ -13,8 +14,13 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
 spec:
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
     spec:
       serviceAccountName: {{ include "notes-app.name" . }}-wait-sa
+      automountServiceAccountToken: true
       containers:
       - name: check-cert-manager
         image: bitnami/kubectl:latest
