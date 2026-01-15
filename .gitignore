@@ -95,3 +95,5 @@ celerybeat-schedule
 
 # PyCharm
 .idea/
+
+frontend/node_modules
