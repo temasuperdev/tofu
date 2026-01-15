@@ -6,7 +6,7 @@ import uuid
 from contextlib import contextmanager
 
 from app.database import Base, get_db, init_db_engine
-from app.main import app
+from app.main import app as fastapi_app  # app - это объект FastAPI, переименовываем чтобы избежать конфликта
 from app.models.user import User
 from app.models.note import Note
 from app.models.category import Category
@@ -81,10 +81,12 @@ def client(db_session, engine):
     app.database.engine = engine
     app.database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
-    app.dependency_overrides[get_db] = override_get_db
+    # app - это объект FastAPI из app.main, у него есть dependency_overrides
+    # app - это объект FastAPI из app.main, у него есть dependency_overrides
+    fastapi_app.dependency_overrides[get_db] = override_get_db
     
     # Создаем клиент - lifespan вызовет init_db_engine, но мы его переопределили
-    with TestClient(app) as test_client:
+    with TestClient(fastapi_app) as test_client:
         # Убеждаемся, что engine все еще тестовый после создания клиента и lifespan
         app.database.engine = engine
         app.database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -92,7 +94,7 @@ def client(db_session, engine):
     
     # Восстанавливаем
     app.database.init_db_engine = original_init_db_engine
-    app.dependency_overrides.clear()
+    fastapi_app.dependency_overrides.clear()
     if "TESTING" in os.environ:
         del os.environ["TESTING"]
 
