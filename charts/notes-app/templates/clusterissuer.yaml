@@ -3,6 +3,10 @@ apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: {{ .Values.certManager.clusterIssuer.name }}
+  labels:
+    app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
   annotations:
     "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"

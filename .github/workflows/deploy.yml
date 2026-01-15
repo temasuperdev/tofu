@@ -60,6 +60,10 @@ jobs:
         helm dependency update ./charts/notes-app
         # Удаляем проблемные NetworkPolicy перед обновлением
         kubectl delete networkpolicy frontend-netpol backend-netpol postgresql-netpol --namespace note --ignore-not-found=true
+        # Удаляем существующий Certificate, если он был создан без аннотаций Helm
+        kubectl delete certificate notes-tls-cert --namespace note --ignore-not-found=true
+        # Удаляем существующий ClusterIssuer, если он был создан без аннотаций Helm (опционально, так как это Cluster-scoped ресурс)
+        kubectl delete clusterissuer letsencrypt-prod --ignore-not-found=true || true
         kubectl delete secret notes-app-db-secret notes-app-app-secret --namespace note || true
         kubectl delete secret notes-app-postgresql --namespace note || true
         helm uninstall notes-app --namespace note || true
