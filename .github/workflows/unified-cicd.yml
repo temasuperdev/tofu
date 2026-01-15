@@ -171,9 +171,46 @@ jobs:
         # Удаляем проблемные NetworkPolicy перед обновлением
         kubectl delete networkpolicy frontend-netpol backend-netpol postgresql-netpol --namespace note --ignore-not-found=true
         # Удаляем существующий Certificate, если он был создан без аннотаций Helm
-        kubectl delete certificate notes-tls-cert --namespace note --ignore-not-found=true
-        # Удаляем существующий ClusterIssuer, если он был создан без аннотаций Helm (опционально, так как это Cluster-scoped ресурс)
-        kubectl delete clusterissuer letsencrypt-prod --ignore-not-found=true || true
+        # Проверяем существование и удаляем с правильным API group
+        if kubectl get certificate notes-tls-cert -n note >/dev/null 2>&1; then
+          echo "Certificate exists, checking annotations..."
+          RELEASE_NAME=$(kubectl get certificate notes-tls-cert -n note -o jsonpath='{.metadata.annotations.meta\.helm\.sh/release-name}' 2>/dev/null || echo "")
+          if [ "$RELEASE_NAME" != "notes-app" ]; then
+            echo "Certificate exists without correct Helm annotations, attempting to remove..."
+            # Пытаемся удалить
+            kubectl delete certificate notes-tls-cert --namespace note --wait=false --timeout=5s 2>/dev/null || true
+            # Удаляем finalizers если они есть
+            kubectl patch certificate notes-tls-cert --namespace note -p '{"metadata":{"finalizers":[]}}' --type=merge --ignore-not-found=true 2>/dev/null || true
+            # Повторное удаление после удаления finalizers
+            kubectl delete certificate notes-tls-cert --namespace note --ignore-not-found=true --timeout=5s 2>/dev/null || true
+            # Если удаление не сработало, добавляем аннотации для "усыновления" ресурса
+            if kubectl get certificate notes-tls-cert -n note >/dev/null 2>&1; then
+              echo "Certificate still exists, adding Helm annotations to adopt it..."
+              kubectl annotate certificate notes-tls-cert -n note "meta.helm.sh/release-name=notes-app" "meta.helm.sh/release-namespace=note" --overwrite || true
+            else
+              echo "Certificate successfully removed"
+            fi
+            sleep 2
+          fi
+        fi
+        # Удаляем существующий ClusterIssuer, если он был создан без аннотаций Helm
+        if kubectl get clusterissuer letsencrypt-prod >/dev/null 2>&1; then
+          RELEASE_NAME_CI=$(kubectl get clusterissuer letsencrypt-prod -o jsonpath='{.metadata.annotations.meta\.helm\.sh/release-name}' 2>/dev/null || echo "")
+          if [ "$RELEASE_NAME_CI" != "notes-app" ]; then
+            echo "ClusterIssuer exists without correct Helm annotations, attempting to remove..."
+            kubectl delete clusterissuer letsencrypt-prod --wait=false --timeout=5s 2>/dev/null || true
+            kubectl patch clusterissuer letsencrypt-prod -p '{"metadata":{"finalizers":[]}}' --type=merge --ignore-not-found=true 2>/dev/null || true
+            kubectl delete clusterissuer letsencrypt-prod --ignore-not-found=true --timeout=5s 2>/dev/null || true
+            # Если удаление не сработало, добавляем аннотации для "усыновления" ресурса
+            if kubectl get clusterissuer letsencrypt-prod >/dev/null 2>&1; then
+              echo "ClusterIssuer still exists, adding Helm annotations to adopt it..."
+              kubectl annotate clusterissuer letsencrypt-prod "meta.helm.sh/release-name=notes-app" "meta.helm.sh/release-namespace=note" --overwrite || true
+            else
+              echo "ClusterIssuer successfully removed"
+            fi
+            sleep 2
+          fi
+        fi
         # Обновляем Helm релиз с указанием namespace
         helm upgrade --install notes-app ./charts/notes-app \
           --set backend.image.repository=${{ env.REGISTRY }}/${{ github.repository_owner }}/notes-backend \
