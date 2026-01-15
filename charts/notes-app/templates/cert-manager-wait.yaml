@@ -1,0 +1,76 @@
+{{- if .Values.certManager.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cert-manager-ready-check
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "notes-app.name" . }}-wait-sa
+      containers:
+      - name: check-cert-manager
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for cert-manager webhook to be ready..."
+          kubectl wait --for=condition=available deployment/cert-manager-webhook -n cert-manager --timeout=300s
+          echo "Cert-manager webhook is ready"
+      restartPolicy: OnFailure
+  backoffLimit: 10
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "notes-app.name" . }}-wait-sa
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/name: {{ include "notes-app.name" . | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "notes-app.name" . }}-wait-role
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "notes-app.name" . }}-wait-binding
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+subjects:
+- kind: ServiceAccount
+  name: {{ include "notes-app.name" . }}-wait-sa
+  namespace: {{ .Release.Namespace | default .Values.global.namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "notes-app.name" . }}-wait-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

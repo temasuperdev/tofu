@@ -10,6 +10,9 @@ metadata:
   annotations:
     "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 spec:
   acme:
     server: {{ .Values.certManager.clusterIssuer.server | quote }}
