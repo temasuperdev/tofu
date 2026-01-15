@@ -1,0 +1,21 @@
+{{- if and .Values.cert-manager.enabled .Values.cert-manager.clusterIssuer -}}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Values.cert-manager.clusterIssuer.name }}
+  annotations:
+    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
+    "meta.helm.sh/release-name": "{{ .Release.Name }}"
+spec:
+  acme:
+    server: {{ .Values.cert-manager.clusterIssuer.server | quote }}
+    email: {{ .Values.cert-manager.clusterIssuer.email | quote }}
+    # Используем HTTP-01 challenge для k3s Traefik
+    solvers:
+    - http01:
+        ingress:
+          class: traefik
+    # Храним приватный ключ в секрете
+    privateKeySecretRef:
+      name: {{ .Values.cert-manager.clusterIssuer.name }}-private-key
+{{- end }}

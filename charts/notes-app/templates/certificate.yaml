@@ -1,0 +1,22 @@
+{{- if and .Values.frontend.ingress.enabled .Values.cert-manager.enabled .Values.frontend.ingress.tls -}}
+{{- range .Values.frontend.ingress.tls }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .secretName }}
+  namespace: {{ $.Values.global.namespace }}
+  annotations:
+    "meta.helm.sh/release-namespace": "{{ $.Values.global.namespace }}"
+    "meta.helm.sh/release-name": "{{ $.Release.Name }}"
+spec:
+  secretName: {{ .secretName }}
+  issuerRef:
+    name: {{ $.Values.cert-manager.clusterIssuer.name }}
+    kind: ClusterIssuer
+  dnsNames:
+    {{- range .hosts }}
+    - {{ . | quote }}
+    {{- end }}
+{{- end }}
+{{- end }}
