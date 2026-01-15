@@ -1,84 +1,84 @@
 # Общие настройки
 global:
- domain: "serv.temasuug.ru"
- namespace: "note"
- repositoryOwner: "temasuug"
+  domain: "serv.temasuug.ru"
+  namespace: "note"
+  repositoryOwner: "temasuug"
 
 # Настройки фронтенда
 frontend:
- replicaCount: 2
- repositoryOwner: "temasuug"
- image:
-   repository: "ghcr.io/{{ .Values.global.repositoryOwner }}/notes-frontend"
-   pullPolicy: IfNotPresent
-   tag: "latest"
- service:
-   type: ClusterIP
-   port: 80
- ingress:
-   enabled: true
-   className: "traefik"
-   annotations:
-     cert-manager.io/cluster-issuer: letsencrypt-prod
-     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-     traefik.ingress.kubernetes.io/router.tls: "true"
-    # Security headers
-    traefik.ingress.kubernetes.io/router.priority: "100"
-  hosts:
-    - host: "serv.temasuug.ru"
-  tls:
-    - secretName: notes-tls-cert
-      hosts:
-        - serv.temasuug.ru
+  replicaCount: 2
+  repositoryOwner: "temasuug"
+  image:
+    repository: "ghcr.io/{{ .Values.global.repositoryOwner }}/notes-frontend"
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    className: "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      # Security headers
+      traefik.ingress.kubernetes.io/router.priority: "100"
+    hosts:
+      - host: "serv.temasuug.ru"
+    tls:
+      - secretName: notes-tls-cert
+        hosts:
+          - serv.temasuug.ru
 
 # Настройки бэкенда
 backend:
- replicaCount: 2
- image:
-   repository: "ghcr.io/{{ .Values.global.repositoryOwner }}/notes-backend"
-   pullPolicy: IfNotPresent
-   tag: "latest"
- service:
-   type: ClusterIP
-   port: 8000
- env:
-   SECRET_KEY: "your-secret-key-here"
-   ALGORITHM: "HS256"
-   ACCESS_TOKEN_EXPIRE_MINUTES: 30
-   SERVER_HOST: "0.0.0.0"
-   SERVER_PORT: "8000"
-   BACKEND_CORS_ORIGINS: "https://{{ .Values.global.domain }}"
+  replicaCount: 2
+  image:
+    repository: "ghcr.io/{{ .Values.global.repositoryOwner }}/notes-backend"
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+  env:
+    SECRET_KEY: "your-secret-key-here"
+    ALGORITHM: "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    SERVER_HOST: "0.0.0.0"
+    SERVER_PORT: "8000"
+    BACKEND_CORS_ORIGINS: "https://{{ .Values.global.domain }}"
 
 # Настройки PostgreSQL
 postgresql:
- enabled: true
- image:
-   registry: docker.io
-   repository: bitnami/postgresql
-   tag: "15.5.0"
- auth:
-   postgresPassword: "strong-password"
-   database: "notesdb"
- primary:
-   persistence:
-     enabled: true
-     size: 10Gi
-     storageClass: "local-path"
-   # Добавляем параметры, которые помогут избежать конфликта при обновлении
-   configuration: |
-     max_connections = 300
-     shared_buffers = 128MB
-   extendedConfiguration: |
-     log_min_messages = WARNING
-   initdb:
-     scriptsConfigMap: null
-   updateStrategy:
-     type: RollingUpdate
-   # Указываем политику хранения PVC, чтобы избежать конфликта при обновлении
-   persistentVolumeClaimRetentionPolicy:
-     whenDeleted: Retain
-     whenScaled: Retain
- architecture: standalone
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: "15.5.0"
+  auth:
+    postgresPassword: "strong-password"
+    database: "notesdb"
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "local-path"
+    # Добавляем параметры, которые помогут избежать конфликта при обновлении
+    configuration: |
+      max_connections = 300
+      shared_buffers = 128MB
+    extendedConfiguration: |
+      log_min_messages = WARNING
+    initdb:
+      scriptsConfigMap: null
+    updateStrategy:
+      type: RollingUpdate
+    # Указываем политику хранения PVC, чтобы избежать конфликта при обновлении
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+  architecture: standalone
 
 # Ресурсы для контейнеров
 resources:
