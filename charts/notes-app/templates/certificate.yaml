@@ -1,4 +1,4 @@
-{{- if and .Values.frontend.ingress.enabled .Values.cert-manager.enabled .Values.frontend.ingress.tls -}}
+{{- if and .Values.frontend.ingress.enabled .Values.certManager.enabled .Values.frontend.ingress.tls }}
 {{- range .Values.frontend.ingress.tls }}
 ---
 apiVersion: cert-manager.io/v1
@@ -12,7 +12,7 @@ metadata:
 spec:
   secretName: {{ .secretName }}
   issuerRef:
-    name: {{ $.Values.cert-manager.clusterIssuer.name }}
+    name: {{ $.Values.certManager.clusterIssuer.name }}
     kind: ClusterIssuer
   dnsNames:
     {{- range .hosts }}

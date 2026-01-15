@@ -124,7 +124,7 @@ traefik:
     maxVersion: VersionTLS13
     sniStrict: true
 
-cert-manager:
+certManager:
   enabled: true
   installCRDs: false
   clusterIssuer:
