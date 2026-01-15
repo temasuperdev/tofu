@@ -10,11 +10,13 @@ metadata:
     {{- end }}
     # Совместимость со старыми версиями k3s
     kubernetes.io/ingress.class: "traefik"
+    # Применение middleware для безопасности
+    traefik.ingress.kubernetes.io/router.middlewares: "{{ .Values.global.namespace }}-security-headers@kubernetescrd"
     # Удаляем потенциально проблемные аннотации
     "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
-  ingressClassName: {{ .Values.frontend.ingress.className }}
+  ingressClassName: {{ .Values.frontend.ingress.className | quote }}
   tls:
     {{- range .Values.frontend.ingress.tls }}
     - hosts:
@@ -29,6 +31,13 @@ spec:
       http:
         paths:
           # Более специфичные пути должны идти ПЕРЕД общим путем /
+          - path: /api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "notes-app.fullname" $ }}-backend-svc
+                port:
+                  number: {{ $.Values.backend.service.port }}
           - path: /api
             pathType: Prefix
             backend:
@@ -45,6 +54,20 @@ spec:
                   number: {{ $.Values.backend.service.port }}
           - path: /redoc
             pathType: Prefix
+            backend:
+              service:
+                name: {{ include "notes-app.fullname" $ }}-backend-svc
+                port:
+                  number: {{ $.Values.backend.service.port }}
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: {{ include "notes-app.fullname" $ }}-backend-svc
+                port:
+                  number: {{ $.Values.backend.service.port }}
+          - path: /metrics
+            pathType: Exact
             backend:
               service:
                 name: {{ include "notes-app.fullname" $ }}-backend-svc

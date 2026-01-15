@@ -1,31 +1,4 @@
-{{- if and .Values.frontend.ingress.enabled (eq .Values.frontend.ingress.className "traefik") -}}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ include "notes-app.fullname" . }}-ingress-http
-  namespace: {{ .Values.global.namespace }}
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-    # Совместимость со старыми версиями k3s
-    kubernetes.io/ingress.class: "traefik"
-    # Удаляем потенциально проблемные аннотации
-    "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
-    "meta.helm.sh/release-name": "{{ .Release.Name }}"
-spec:
-  ingressClassName: {{ .Values.frontend.ingress.className }}
-  rules:
-    {{- range .Values.frontend.ingress.hosts }}
-    - host: {{ .host | quote }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "notes-app.fullname" $ }}-frontend-svc
-                port:
-                  number: {{ $.Values.frontend.service.port }}
-    {{- end }}
+{{- if and .Values.frontend.ingress.enabled (eq .Values.frontend.ingress.className "traefik") .Values.traefik.middlewareEnabled }}
+# HTTP to HTTPS redirect через отдельный ingress (опционально)
+# Можно использовать вместо этого Traefik redirect middleware
 {{- end }}
