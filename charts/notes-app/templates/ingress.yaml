@@ -17,6 +17,9 @@ metadata:
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
 spec:
   ingressClassName: {{ .Values.frontend.ingress.className | quote }}
+  {{- if .Values.certManager.enabled }}
+  # Не указываем TLS напрямую если используем cert-manager, он создаст свой ресурс Certificate
+  {{- else }}
   tls:
     {{- range .Values.frontend.ingress.tls }}
     - hosts:
@@ -25,6 +28,7 @@ spec:
         {{- end }}
       secretName: {{ .secretName }}
     {{- end }}
+  {{- end }}
   rules:
     {{- range .Values.frontend.ingress.hosts }}
     - host: {{ .host | quote }}

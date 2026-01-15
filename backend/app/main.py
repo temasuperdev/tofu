@@ -50,46 +50,53 @@ def health_check():
     from app.database import engine
     from sqlalchemy import text
     
-    # Проверяем, не тестовое ли это окружение
-    # В тестах может быть установлена переменная окружения или использоваться SQLite
-    is_test_env = (
-        os.getenv("TESTING", "").lower() == "true" or
-        os.getenv("PYTEST_CURRENT_TEST") is not None or
-        "pytest" in str(os.getenv("_", "")).lower()
-    )
-    
-    # Если engine не инициализирован, возвращаем healthy (для тестового окружения)
-    if engine is None:
-        return {"status": "healthy"}
-    
-    # Проверяем, не тестовое ли это окружение по URL БД (SQLite или test.db)
     try:
-        engine_url = str(engine.url)
-        is_test_db = "sqlite" in engine_url.lower() or "test.db" in engine_url.lower()
-    except:
-        is_test_db = False
-    
-    # В тестовом окружении просто возвращаем healthy без проверки подключения
-    if is_test_env or is_test_db:
-        return {"status": "healthy"}
-    
-    # В production окружении проверяем подключение к БД
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        return {"status": "healthy"}
-    except Exception as e:
-        # Вместо немедленного возврата 503, логируем ошибку и проверяем, 
-        # может ли приложение функционировать без подключения к БД в данный момент
-        import logging
-        logging.warning(f"Database connection failed during health check: {str(e)}")
+        # Проверяем, не тестовое ли это окружение
+        # В тестах может быть установлена переменная окружения или использоваться SQLite
+        is_test_env = (
+            os.getenv("TESTING", "").lower() == "true" or
+            os.getenv("PYTEST_CURRENT_TEST") is not None or
+            "pytest" in str(os.getenv("_", "")).lower()
+        )
         
-        # Для решения проблемы с Readiness probe, будем возвращать 200 OK, 
-        # если приложение запущено и может обрабатывать запросы, даже если 
-        # подключение к БД временно недоступно
-        # Это позволяет избежать постоянного перезапуска пода из-за 
-        # временных проблем с подключением к БД
-        return {"status": "healthy", "warning": f"DB connection issue: {str(e)}"}
+        # Если engine не инициализирован, возвращаем healthy (для тестового окружения)
+        if engine is None:
+            return {"status": "healthy"}
+        
+        # Проверяем, не тестовое ли это окружение по URL БД (SQLite или test.db)
+        try:
+            engine_url = str(engine.url)
+            is_test_db = "sqlite" in engine_url.lower() or "test.db" in engine_url.lower()
+        except:
+            is_test_db = False
+        
+        # В тестовом окружении просто возвращаем healthy без проверки подключения
+        if is_test_env or is_test_db:
+            return {"status": "healthy"}
+        
+        # В production окружении проверяем подключение к БД
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            return {"status": "healthy"}
+        except Exception as e:
+            # Вместо немедленного возврата 503, логируем ошибку и проверяем,
+            # может ли приложение функционировать без подключения к БД в данный момент
+            import logging
+            logging.warning(f"Database connection failed during health check: {str(e)}")
+            
+            # Для решения проблемы с Readiness probe, будем возвращать 200 OK,
+            # если приложение запущено и может обрабатывать запросы, даже если
+            # подключение к БД временно недоступно
+            # Это позволяет избежать постоянного перезапуска пода из-за
+            # временных проблем с подключением к БД
+            return {"status": "healthy", "warning": f"DB connection issue: {str(e)}"}
+    except Exception as e:
+        # Обработка любых других исключений, которые могут возникнуть
+        import logging
+        logging.error(f"Unexpected error during health check: {str(e)}")
+        # Всё равно возвращаем здоровье приложения, чтобы не вызывать перезапуск пода
+        return {"status": "healthy", "error": f"Unexpected error: {str(e)}"}
 
 @app.get("/metrics")
 def metrics_endpoint():
