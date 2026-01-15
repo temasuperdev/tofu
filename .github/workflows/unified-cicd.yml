@@ -2,12 +2,13 @@ name: Unified CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, init ]
+    branches: [ main, init ]
     paths:
       - 'backend/**'
       - 'frontend/**'
       - 'charts/**'
-      - 'Dockerfile'
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
       - 'docker-compose.yml'
       - '.github/workflows/**'
   pull_request:
@@ -16,7 +17,8 @@ on:
       - 'backend/**'
       - 'frontend/**'
       - 'charts/**'
-      - 'Dockerfile'
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
       - 'docker-compose.yml'
 
 env:
@@ -108,7 +110,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/init')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/init')
     permissions:
       packages: write
       contents: read

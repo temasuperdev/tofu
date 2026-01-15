@@ -11,6 +11,8 @@ on:
         description: 'Frontend image tag to deploy'
         required: true
         default: 'latest'
+  push:
+    branches: [ main, init ]
   repository_dispatch:
     types: [deploy-production]
 
