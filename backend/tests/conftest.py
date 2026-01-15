@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 import uuid
 from contextlib import contextmanager
 
-from app.database import Base, get_db
+from app.database import Base, get_db, init_db_engine
 from app.main import app
 from app.models.user import User
 from app.models.note import Note
@@ -13,9 +13,30 @@ from app.models.category import Category
 from app.security.password import get_password_hash
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def engine():
-    return create_engine("sqlite:///./test.db")
+    """Инициализируем тестовую БД и переопределяем глобальный engine"""
+    test_db_url = "sqlite:///./test.db"
+    test_engine = create_engine(test_db_url)
+    
+    # Переопределяем глобальный engine для health check и других компонентов
+    import app.database
+    app.database.engine = test_engine
+    app.database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    
+    # Также переопределяем init_db_engine, чтобы она использовала тестовую БД
+    original_init_db_engine = app.database.init_db_engine
+    def mock_init_db_engine(database_url=None):
+        app.database.engine = test_engine
+        app.database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+        return test_engine
+    
+    app.database.init_db_engine = mock_init_db_engine
+    
+    yield test_engine
+    
+    # Восстанавливаем оригинальную функцию после тестов
+    app.database.init_db_engine = original_init_db_engine
 
 
 @pytest.fixture(scope="session")
