@@ -2,7 +2,7 @@
 global:
  domain: "serv.temasuug.ru"
  namespace: "note"
- repositoryOwner: "your-username"
+ repositoryOwner: "temasuug"
 
 # Настройки фронтенда
 frontend:
