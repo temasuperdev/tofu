@@ -1,0 +1,125 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: github-actions-runner-config
+  namespace: default
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Настройка runner
+    ./config.sh --url ${GITHUB_URL} --token ${RUNNER_TOKEN} --name ${RUNNER_NAME} --work ${RUNNER_WORKDIR} --replace
+    
+    # Запуск runner
+    exec ./run.sh
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-actions-runner-dind
+  namespace: default
+  labels:
+    app: github-actions-runner-dind
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-actions-runner-dind
+  template:
+    metadata:
+      labels:
+        app: github-actions-runner-dind
+    spec:
+      initContainers:
+      - name: runner-init
+        image: ghcr.io/actions/actions-runner:latest
+        command:
+        - sh
+        - -c
+        - |
+          # Убедиться, что папка _work существует
+          mkdir -p /actions-runner/_work
+        volumeMounts:
+        - name: runner-work
+          mountPath: /actions-runner/_work
+      containers:
+      - name: dind
+        image: docker:dind
+        args:
+        - --registry-mirror=https://mirror.gcr.io
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: docker-graph-storage
+          mountPath: /var/lib/docker
+        - name: runner-work
+          mountPath: /_work
+        env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        command:
+        - /entrypoint/entrypoint.sh
+        env:
+        - name: GITHUB_URL
+          valueFrom:
+            secretKeyRef:
+              name: github-runner-secrets
+              key: GITHUB_REPO_URL
+        - name: RUNNER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-runner-secrets
+              key: GITHUB_RUNNER_TOKEN
+        - name: RUNNER_NAME
+          valueFrom:
+            secretKeyRef:
+              name: github-runner-secrets
+              key: GITHUB_RUNNER_NAME
+        - name: RUNNER_WORKDIR
+          value: "/_work"
+        - name: RUNNER_GROUP
+          value: "default"
+        volumeMounts:
+        - name: runner-work
+          mountPath: /_work
+        - name: entrypoint
+          mountPath: /entrypoint
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: docker-graph-storage
+        emptyDir: {}
+      - name: runner-work
+        emptyDir: {}
+      - name: entrypoint
+        configMap:
+          name: github-actions-runner-config
+          defaultMode: 0755
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: false
+        fsGroup: 1000

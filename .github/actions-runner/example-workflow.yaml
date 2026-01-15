@@ -1,0 +1,123 @@
+# Пример workflow, использующего self-hosted runner в k3s
+name: CI Pipeline with Local Runner
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    # Использование локального runner вместо ubuntu-latest
+    runs-on: self-hosted
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=5
+        # В k8s runner этот сервис будет запускаться как sidecar container
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run linting
+      run: |
+        pip install flake8 black mypy
+        flake8 backend/
+        black --check backend/
+        mypy backend/
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        pytest tests/ --cov=app --cov-report=xml
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+
+  test-frontend:
+    # Использование локального runner
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+      working-directory: frontend
+
+    - name: Run linting
+      run: npm run lint
+      working-directory: frontend
+
+    - name: Run unit tests
+      run: npm run test:unit
+      working-directory: frontend
+
+    - name: Build frontend
+      run: npm run build
+      working-directory: frontend
+
+  build-and-push:
+    needs: [test-backend, test-frontend]
+    # Использование локального runner
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push backend image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+          ghcr.io/${{ github.repository }}/backend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
+          ghcr.io/${{ github.repository }}/frontend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
