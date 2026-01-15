@@ -18,6 +18,10 @@ spec:
         - podSelector:
             matchLabels:
               app: backend
+        # Разрешаем доступ из namespace kube-system (где работает Traefik в k3s)
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
       ports:
         - protocol: TCP
           port: 80
@@ -28,7 +32,7 @@ spec:
               app: backend
       ports:
         - protocol: TCP
-          port: 800
+          port: 8000
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -50,12 +54,15 @@ spec:
         - podSelector:
             matchLabels:
               app: frontend
+        # Разрешаем доступ из namespace kube-system (где работает Traefik в k3s)
         - namespaceSelector:
             matchLabels:
-              name: traefik
+              name: kube-system
+        # Также разрешаем доступ из любого namespace для Traefik
+        - namespaceSelector: {}
       ports:
         - protocol: TCP
-          port: 800
+          port: 8000
   egress:
     - to:
         - podSelector:

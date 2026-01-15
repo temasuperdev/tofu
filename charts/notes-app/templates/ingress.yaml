@@ -8,6 +8,8 @@ metadata:
     {{- range $key, $value := .Values.frontend.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    # Совместимость со старыми версиями k3s
+    kubernetes.io/ingress.class: "traefik"
     # Удаляем потенциально проблемные аннотации
     "meta.helm.sh/release-namespace": "{{ .Values.global.namespace }}"
     "meta.helm.sh/release-name": "{{ .Release.Name }}"
