@@ -1,0 +1,85 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Set up kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+
+    - name: Update backend deployment
+      run: |
+        kubectl set image deployment/backend-deployment backend=ghcr.io/${{ github.repository }}/backend:${{ github.sha }} -n staging
+        kubectl rollout status deployment/backend-deployment -n staging
+
+    - name: Update frontend deployment
+      run: |
+        kubectl set image deployment/frontend-deployment frontend=ghcr.io/${{ github.repository }}/frontend:${{ github.sha }} -n staging
+        kubectl rollout status deployment/frontend-deployment -n staging
+
+    - name: Run smoke tests
+      run: |
+        # Add health check and basic functionality tests
+        sleep 30
+        curl -f http://staging.serv.temasuug.ru/health || exit 1
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: success() && contains(github.event.head_commit.message, '[deploy]')
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Set up kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG_PROD }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+
+    - name: Update backend deployment
+      run: |
+        kubectl set image deployment/backend-deployment backend=ghcr.io/${{ github.repository }}/backend:${{ github.sha }} -n production
+        kubectl rollout status deployment/backend-deployment -n production
+
+    - name: Update frontend deployment
+      run: |
+        kubectl set image deployment/frontend-deployment frontend=ghcr.io/${{ github.repository }}/frontend:${{ github.sha }} -n production
+        kubectl rollout status deployment/frontend-deployment -n production
+
+    - name: Run production smoke tests
+      run: |
+        sleep 30
+        curl -f https://serv.temasuug.ru/health || exit 1
+
+    - name: Notify deployment
+      run: |
+        # Send notification to Slack/Teams about successful deployment
+        curl -X POST -H 'Content-type: application/json' \
+        --data '{"text":"Production deployment successful: ${{ github.sha }}"}' \
+        ${{ secrets.SLACK_WEBHOOK_URL }}

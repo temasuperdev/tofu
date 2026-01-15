@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: notes-app
+data:
+  API_BASE_URL: "http://backend-service:8000"
