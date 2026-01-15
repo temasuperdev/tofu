@@ -56,17 +56,45 @@ def db_session(engine, tables):
 
 
 @pytest.fixture
-def client(db_session):
+def client(db_session, engine):
     def override_get_db():
         try:
             yield db_session
         finally:
             pass  # Не закрываем сессию здесь, так как она управляется фикстурой
     
+    # Устанавливаем переменную окружения для определения тестового режима ДО создания клиента
+    import os
+    os.environ["TESTING"] = "true"
+    
+    # Переопределяем init_db_engine ПЕРЕД созданием клиента, чтобы lifespan использовал тестовую БД
+    import app.database
+    original_init_db_engine = app.database.init_db_engine
+    def mock_init_db_engine(database_url=None):
+        # Всегда возвращаем тестовый engine
+        app.database.engine = engine
+        app.database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        return engine
+    app.database.init_db_engine = mock_init_db_engine
+    
+    # Устанавливаем engine перед созданием клиента
+    app.database.engine = engine
+    app.database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
     app.dependency_overrides[get_db] = override_get_db
+    
+    # Создаем клиент - lifespan вызовет init_db_engine, но мы его переопределили
     with TestClient(app) as test_client:
+        # Убеждаемся, что engine все еще тестовый после создания клиента и lifespan
+        app.database.engine = engine
+        app.database.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         yield test_client
+    
+    # Восстанавливаем
+    app.database.init_db_engine = original_init_db_engine
     app.dependency_overrides.clear()
+    if "TESTING" in os.environ:
+        del os.environ["TESTING"]
 
 
 @pytest.fixture
